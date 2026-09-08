@@ -1,331 +1,178 @@
-# Ecommerce Django Project
-
-A full-featured ecommerce web application built with Django, featuring product management, shopping cart, payment integration, and user accounts.
-
-<img width="1901" height="1072" alt="image" src="https://github.com/user-attachments/assets/f8e32e9f-e0e0-49ba-9013-4ebb56855a05" />
-
-
-## Features
-
-### Core Features
-- **Product Management**: Categories, products with size and color variants
-- **Shopping Cart**: Add to cart, update quantities, remove items
-- **Coupon System**: Apply discount coupons with minimum order requirements
-- **Payment Integration**: Razorpay payment gateway integration
-- **Invoice Generation**: Automatic PDF invoice generation after payment
-- **Email Notifications**: Invoice emails with PDF attachments
-- **User Authentication**: Registration, login, email verification
-- **User Profiles**: Complete profile management with address details
-- **Search Functionality**: Search products by name and description
-- **Category Browsing**: Browse products by category
-
-### Technical Features
-- Session-based cart for anonymous users
-- User-based cart for authenticated users
-- Dynamic price calculation based on size and color variants
-- Image management with color-specific product images
-- Responsive design with Bootstrap 4
-- Admin panel for managing all entities
-
-## Project Structure
-
-```
-Ecommerce/
-├── accounts/          # User authentication and profiles
-├── base/             # Base models and email utilities
-├── cart/             # Shopping cart and payment functionality
-├── home/             # Homepage and search
-├── products/         # Product, category, and variant models
-├── templates/        # HTML templates
-├── public/static/    # Static files (CSS, JS, images)
-└── Ecommerce/        # Project settings and URLs
-```
-
-## Installation
-
-### Prerequisites
-- Python 3.8 or higher
-- pip
-- Virtual environment (recommended)
-
-### Setup Steps
-
-1. **Clone or navigate to the project directory**
-   ```bash
-   cd Ecommerce
-   ```
-
-2. **Create and activate virtual environment**
-   ```bash
-   python -m venv myenv
-   # On Windows
-   myenv\Scripts\activate
-   # On Linux/Mac
-   source myenv/bin/activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure settings**
-   - Open `Ecommerce/settings.py`
-   - Update Razorpay keys:
-     ```python
-     RAZORPAY_KEY_ID = 'your_razorpay_key_id'
-     RAZORPAY_KEY_SECRET = 'your_razorpay_secret_key'
-     ```
-   - Configure email settings (already configured for Gmail)
-
-5. **Run migrations**
-   ```bash
-   python manage.py makemigrations
-   python manage.py migrate
-   ```
-
-6. **Create superuser**
-   ```bash
-   python manage.py createsuperuser
-   ```
-
-7. **Populate database with sample data**
-   ```bash
-   python manage.py populate_db
-   ```
-   Note: This creates categories, products, variants, and coupons. Images need to be added manually.
-
-8. **Run development server**
-   ```bash
-   python manage.py runserver
-   ```
-
-9. **Access the application**
-   - Website: http://127.0.0.1:8000
-   - Admin Panel: http://127.0.0.1:8000/admin
-
-## Database Population
-
-The project includes a management command to populate the database with sample data:
-
-```bash
-python manage.py populate_db
-```
-
-This command creates:
-- 8 Categories (Electronics, Clothing, Home & Living, Books, Sports, Beauty, Toys, Automotive)
-- 6 Size Variants (XS, S, M, L, XL, XXL)
-- 10 Color Variants (Red, Blue, Green, Black, White, Yellow, Pink, Purple, Orange, Grey)
-- 40+ Products across all categories
-- 6 Coupons (including expired ones)
-
-**Note**: Images are not included. You need to add product and category images through the admin panel.
-
-## Models
-
-### Products App
-- **Category**: Product categories with images
-- **Product**: Main product model with name, price, description
-- **SizeVariant**: Size options with price adjustments
-- **ColorVariant**: Color options with price adjustments
-- **ProductImage**: Product images linked to color variants
-
-### Cart App
-- **Cart**: User shopping cart
-- **CartItems**: Individual items in cart with variants
-- **Coupon**: Discount coupons with validation
-- **Payment**: Payment records with Razorpay integration
-
-### Accounts App
-- **Profile**: Extended user profile with address and personal info
-
-## Admin Panel
-
-Access the admin panel at `/admin` to manage:
-- Categories and Products
-- Size and Color Variants
-- Product Images
-- Coupons
-- Carts and Cart Items
-- Payments
-- User Profiles
-
-## API Endpoints / URLs
-
-### Home & Products
-- `/` - Homepage with products
-- `/search/?q=query` - Search products
-- `/product/<slug>/` - Product detail page
-- `/product/category/<slug>/` - Category products page
-
-### Authentication
-- `/accounts/login/` - User login
-- `/accounts/register/` - User registration
-- `/accounts/logout/` - User logout
-- `/accounts/account/` - User account/profile page
-- `/accounts/activate/<token>/` - Email activation
-
-### Cart
-- `/cart/` - View cart
-- `/cart/add/` - Add to cart (POST)
-- `/cart/update/<item_id>/` - Update cart item (POST)
-- `/cart/remove/<item_id>/` - Remove from cart (POST)
-- `/cart/coupon/apply/` - Apply coupon (POST)
-- `/cart/coupon/remove/` - Remove coupon (POST)
-- `/cart/payment/` - Initiate payment
-- `/cart/payment/verify/` - Verify payment (POST)
-- `/cart/payment/success/<payment_id>/` - Payment success page
-
-## Payment Integration
-
-### Razorpay Setup
-1. Sign up at [Razorpay](https://razorpay.com/)
-2. Get your API keys from Dashboard > Settings > API Keys
-3. Update `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` in settings.py
-4. Use test mode for development
-
-### Test Cards
-- Success: 4111 1111 1111 1111
-- Failure: 4000 0000 0000 0002
-- CVV: Any 3 digits
-- Expiry: Any future date
-
-## Email Configuration
-
-The project uses Gmail SMTP. Update these in `settings.py`:
-- `EMAIL_HOST_USER`: Your Gmail address
-- `EMAIL_HOST_PASSWORD`: Gmail app password
-
-To generate app password:
-1. Enable 2-factor authentication
-2. Go to Google Account > Security > App passwords
-3. Generate password for "Mail"
-
-## Environment Variables (Optional)
-
-For production, consider using environment variables:
-```python
-import os
-
-RAZORPAY_KEY_ID = os.environ.get('RAZORPAY_KEY_ID')
-RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-```
-
-## Static Files
-
-Static files are served from `public/static/`. In production:
-1. Run `python manage.py collectstatic`
-2. Configure web server to serve static files
-
-## Media Files
-
-Media files (uploads) are stored in `public/static/`. Ensure:
-- `public/static/categories/` - Category images
-- `public/static/product/` - Product images
-- `public/static/profile/` - Profile images
-- `public/static/invoices/` - Generated invoices
-
-## Testing
-
-### Manual Testing Checklist
-- [ ] User registration and email verification
-- [ ] User login and logout
-- [ ] Product browsing and search
-- [ ] Add products to cart
-- [ ] Update cart quantities
-- [ ] Apply and remove coupons
-- [ ] Payment flow with Razorpay
-- [ ] Invoice generation and email
-- [ ] Profile management
-- [ ] Category filtering
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Migration errors**
-   - Delete `db.sqlite3` and migration files (except `__init__.py`)
-   - Run `python manage.py makemigrations` and `migrate`
-
-2. **Razorpay payment not working**
-   - Verify API keys in settings
-   - Check Razorpay dashboard for logs
-   - Ensure using test keys in development
-
-3. **Email not sending**
-   - Verify Gmail credentials
-   - Check app password is correct
-   - Ensure less secure apps access (if not using app password)
-
-4. **Images not displaying**
-   - Check MEDIA_URL and MEDIA_ROOT in settings
-   - Verify file paths in templates
-   - Ensure images are uploaded to correct directories
-
-## Development
-
-### Adding New Features
-1. Create models in appropriate app
-2. Run migrations
-3. Create views and URLs
-4. Create templates
-5. Update admin if needed
-
-### Code Structure
-- Models: Define in `models.py`
-- Views: Business logic in `views.py`
-- Templates: HTML in `templates/` directory
-- URLs: Route definitions in `urls.py`
-- Admin: Configuration in `admin.py`
-
-## Production Deployment
-
-### Checklist
-- [ ] Set `DEBUG = False` in settings
-- [ ] Update `ALLOWED_HOSTS`
-- [ ] Use environment variables for secrets
-- [ ] Configure proper database (PostgreSQL recommended)
-- [ ] Set up static file serving
-- [ ] Configure HTTPS
-- [ ] Set up proper email service
-- [ ] Use production Razorpay keys
-- [ ] Set up backup strategy
-- [ ] Configure logging
-
-## Technologies Used
-
-- **Backend**: Django 5.2.8
-- **Database**: SQLite (development), PostgreSQL (production recommended)
-- **Frontend**: Bootstrap 4, jQuery
-- **Payment**: Razorpay
-- **PDF Generation**: ReportLab
-- **Email**: Django Email Backend
-
-## License
-
-This project is open source and available for educational purposes.
-
-## Support
-
-For issues and questions:
-1. Check the troubleshooting section
-2. Review Django and Razorpay documentation
-3. Check admin panel for data issues
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## Author
-
-Developed as a comprehensive ecommerce solution with modern features and best practices.
+<p align="center">
+  <img src="public/static/images/swissmax-logo.jpg" alt="SwissMax Beauty Logo" width="160" style="border-radius: 50%; border: 2px solid #C5A059;" />
+</p>
+
+<h1 align="center">SwissMax Beauty</h1>
+<p align="center">
+  <strong>SWISSMAX BEAUTY GRP LIMITED</strong><br>
+  <em>Haute Parfumerie, Clinical Cellular Skincare & Bespoke Cosmetics</em>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Frontend-React%2018%20%7C%20Vite-black?style=flat-square&logo=react" alt="React Vite" />
+  <img src="https://img.shields.io/badge/Backend-Django%205.2-0C4B33?style=flat-square&logo=django" alt="Django" />
+  <img src="https://img.shields.io/badge/Palette-White%20%7C%20Gold%20%7C%20Black-C5A059?style=flat-square" alt="Luxury Palette" />
+  <img src="https://img.shields.io/badge/Deployment-Netlify%20Ready-00C7B7?style=flat-square&logo=netlify" alt="Netlify" />
+</p>
 
 ---
 
-**Note**: Remember to add product and category images through the admin panel after running `populate_db`. The script creates all data except images.
+## ⚜️ About SwissMax Beauty
 
+**SwissMax BEAUTY GRP LIMITED** is a luxury e-commerce platform crafted for high-end beauty, clinical cellular treatments, and artisanal parfumerie. 
+
+Inspired by editorial haute-couture boutique layouts (such as 755.Boutique), the platform blends a clean, minimalist **White, Gold, and Black** design system with a lightweight, modern decoupled architecture. Every element is designed to feel refined, fast, and elegant without backshadow gradients or artificial artifacts.
+
+---
+
+## ✨ Flagship Disciplines
+
+The catalog is centered around three primary categories:
+
+1. **Skincare**: Clinical Swiss cellular elixirs, glacier mineral serums, and overnight edelweiss recovery treatments.
+2. **Cosmetics**: Micro-milled luminous silk foundations, velvet matte royal lip formulations, and 24K gold illuminating compacts.
+3. **Perfume**: Artisanal extraits and pure parfums distilled from rare smoked woods, Cambodian oud, bourbon vanilla, and Alpine botanicals.
+
+---
+
+## 🌟 Key Features
+
+### 1. Moving Hero Carousel (5 Rotating Slides)
+- **Dynamic Split-Hero Layout**: Left editorial panel with headline typography and discovery CTA; Right panel with luxury lifestyle and fragrance showcase.
+- **Continuous Slide Rotation**: Seamlessly transitions between 5 curated cosmetic and skincare slides every 4.5 seconds with silky smooth cross-fade animations.
+- **Interactive Controls**: Numerical slide indicators (`01` through `05`), previous/next chevron arrows, and automatic pause on hover.
+
+### 2. Live Top Announcement Bar
+- Promotional sales strip with an active, real-time ticking countdown clock (`DAYS : HRS : MIN : SEC`).
+
+### 3. Interactive Image Changing Dashboard
+- Accessible via the **Dashboard** button in the header.
+- **Hero Carousel Manager**: Change left and right images (via file upload or URL), edit headlines, adjust countdown clocks, and add or remove slides.
+- **Category Manager**: Swap images and taglines for Skincare, Cosmetics, and Perfume.
+- **Product Catalog Studio**: Upload photos, edit prices, descriptions, and add new luxury editions.
+- **Immediate Persistence**: Changes take effect immediately on the live storefront and persist across refreshes via local storage and API synchronization.
+
+### 4. Mobile-First Responsiveness
+- **Slide-Out Navigation Drawer**: Smooth mobile menu with search, category links, currency selector, and dashboard toggle.
+- **2-Column Product Grid**: Clean, high-density browsing standard on mobile devices.
+- **Touch-Friendly Modals & Drawer**: Full-width shopping bag drawer (`100vw`) and mobile product detail sheets.
+
+### 5. Luxury Shopping Experience
+- **Multi-Currency Support**: Switch seamlessly between `USD ($)`, `EUR (€)`, `GBP (£)`, `CHF (Fr)`, and `GHS (₵)`.
+- **Slide-Over Cart Bag**: Quantity controls, promo voucher support (e.g. `SWISS30` for 30% off, `GOLD10` for 10% off), and checkout simulation.
+- **Swiss Alpine Heritage & Lookbook**: Rich photographic sections highlighting Zurich laboratory heritage and editorial campaign galleries.
+
+---
+
+## 🏛️ Project Architecture
+
+```
+Ecommerce/
+├── frontend/                          # Separate Lightweight React + Vite App
+│   ├── src/
+│   │   ├── assets/                    # SwissMax crest logo & icons
+│   │   ├── components/
+│   │   │   ├── TopAnnouncementBar.jsx # Ticking countdown & promo bar
+│   │   │   ├── Header.jsx             # Logo, currency, search, mobile drawer
+│   │   │   ├── HeroSplitSection.jsx   # 5-slide rotating hero carousel
+│   │   │   ├── CategorySection.jsx    # Skincare, Cosmetics, Perfume cards
+│   │   │   ├── ProductGrid.jsx        # Catalog grid with filtering & sorting
+│   │   │   ├── ProductCard.jsx        # Luxury card with quick-add
+│   │   │   ├── ProductModal.jsx       # Specification picker & details
+│   │   │   ├── CartDrawer.jsx         # Slide-over cart & voucher engine
+│   │   │   ├── Dashboard.jsx          # Live image-changing studio
+│   │   │   ├── HeritageSection.jsx    # Swiss cellular science story
+│   │   │   ├── LookbookSection.jsx    # Editorial campaign gallery
+│   │   │   └── Footer.jsx             # Luxury footer & VIP newsletter
+│   │   ├── data/initialData.js        # Default SwissMax catalog & slides
+│   │   ├── services/api.js            # API layer with localStorage fallback
+│   │   ├── index.css                  # White/Gold/Black design system
+│   │   └── App.jsx                    # Root application state
+│   ├── public/_redirects              # Netlify SPA redirect rule
+│   └── vite.config.js                 # Proxy config for Django backend
+│
+├── Ecommerce/                         # Django Project Settings & APIs
+│   ├── settings.py                    # CORS & media configuration
+│   ├── urls.py                        # REST & static route mapping
+│   └── api_views.py                   # REST endpoints (banners, products, uploads)
+├── products/                          # Product & Category models
+│   └── management/commands/
+│       └── populate_swissmax.py       # Seeds SwissMax categories & items
+├── home/                              # HeroBanner models & views
+├── cart/                              # Cart & payment processing
+├── accounts/                          # User accounts & VIP client profiles
+├── templates/                         # Synchronized Django server-rendered views
+└── public/static/                     # Static media & SwissMax brand crest
+```
+
+---
+
+## 🚀 Getting Started Locally
+
+### 1. Prerequisites
+- **Node.js**: v18 or higher (v24 recommended)
+- **Python**: v3.10 or higher
+
+---
+
+### 2. Running the React Frontend (Recommended)
+The separate React frontend provides the complete modern client experience with the moving carousel and live dashboard.
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open **http://127.0.0.1:5173/** in your browser.
+
+---
+
+### 3. Running the Django Backend (Optional / Parallel)
+
+```bash
+# In the root project directory:
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
+
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py populate_swissmax
+python manage.py runserver 127.0.0.1:8000
+```
+
+- Storefront API: `http://127.0.0.1:8000/api/products/`
+- Django Admin: `http://127.0.0.1:8000/admin/`
+
+---
+
+## 🌐 Deploying Frontend to Netlify
+
+The frontend can be hosted directly on Netlify as a standalone web application.
+
+### Option A: Drag & Drop (Instant)
+1. Build the production assets:
+   ```bash
+   cd frontend
+   npm run build
+   ```
+2. Navigate to **[Netlify Drop](https://app.netlify.com/drop)**.
+3. Drag the `frontend/dist` folder directly onto the page.
+
+### Option B: Continuous Deployment via GitHub
+- **Base directory**: `frontend`
+- **Build command**: `npm run build`
+- **Publish directory**: `frontend/dist`
+
+*(The SPA redirect rule `_redirects` is already included to prevent 404s on page refresh.)*
+
+---
+
+## 📜 Brand Information
+
+- **Company**: SwissMax BEAUTY GRP LIMITED
+- **Ateliers**: Zurich • Geneva • London • Accra
+- **Color Identity**: Pure White (`#FFFFFF`), Rich Gold (`#C5A059`), Deep Obsidian Black (`#0B0C0E`)
