@@ -12,6 +12,12 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
@@ -31,6 +37,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    "corsheaders",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -45,6 +52,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -53,6 +61,16 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
 
 ROOT_URLCONF = "Ecommerce.urls"
 
@@ -121,15 +139,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_ROOT = 'staticfiles'
-STATIC_URL = '/static/'
-
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-STATICFILES_DIR = {
+STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "public/static")
-}
+]
 
 MEDIA_ROOT = os.path.join(BASE_DIR, "public/static")
 MEDIA_URL = '/media/'
@@ -151,5 +166,5 @@ EMAIL_HOST_USER = 'your.mail@gmail.com'
 EMAIL_HOST_PASSWORD = 'your-app-password' # Use an app password for services like Gmail
 
 # Razorpay Settings
-RAZORPAY_KEY_ID = 'your_razorpay_key_id'  # Replace with your actual key
-RAZORPAY_KEY_SECRET = 'your_razorpay_secret_key'  # Replace with your actual secret
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID') or os.getenv('razor_pay_key_id') or 'your_razorpay_key_id'
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET') or os.getenv('key_secret') or 'your_razorpay_secret_key'

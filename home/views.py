@@ -1,16 +1,21 @@
 from django.shortcuts import render
 from products.models import Product, Category
+from home.models import HeroBanner
 
 
-# Create your views here.
 def index(request):
-    products = Product.objects.all()[:12]  # Show 12 products on homepage
-    categories = Category.objects.all()
+    products = Product.objects.all()[:12]
+    categories = Category.objects.filter(slug__in=['skincare', 'cosmetics', 'perfume'])
+    if not categories.exists():
+        categories = Category.objects.all()[:6]
+    banner = HeroBanner.objects.filter(is_active=True).first()
     context = {
         'products': products,
-        'categories': categories
+        'categories': categories,
+        'banner': banner,
     }
     return render(request, 'home/index.html', context)
+
 
 
 def search(request):

@@ -21,13 +21,25 @@ from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
+from Ecommerce import api_views
+
 urlpatterns = [
     path("", include('home.urls')),
     path("product/", include('products.urls')),
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
-    path("cart/", include("cart.urls"))
+    path("cart/", include("cart.urls")),
+    # REST API endpoints for SwissMax React frontend & Dashboard
+    path("api/banners/", api_views.get_banners, name="api_get_banners"),
+    path("api/banners/update/", api_views.update_banner, name="api_update_banner"),
+    path("api/categories/", api_views.get_categories, name="api_get_categories"),
+    path("api/categories/update/<uuid:category_id>/", api_views.update_category, name="api_update_category"),
+    path("api/products/", api_views.get_products, name="api_get_products"),
+    path("api/products/create/", api_views.create_product, name="api_create_product"),
+    path("api/products/update/<uuid:product_id>/", api_views.update_product, name="api_update_product"),
+    path("api/upload/", api_views.upload_file, name="api_upload_file"),
 ]
+
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, 
