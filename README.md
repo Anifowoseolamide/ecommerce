@@ -15,13 +15,23 @@
   <img src="https://img.shields.io/badge/Deployment-Netlify%20Ready-00C7B7?style=flat-square&logo=netlify" alt="Netlify" />
 </p>
 
+<p align="center">
+  <img src="public/static/images/swissmax-storefront-preview.png" alt="SwissMax Beauty Luxury Storefront Preview" width="100%" style="border-radius: 6px; border: 1px solid #C5A059;" />
+</p>
+
 ---
 
 ## ⚜️ About SwissMax Beauty
 
-**SwissMax BEAUTY GRP LIMITED** is a luxury e-commerce platform crafted for high-end beauty, clinical cellular treatments, and artisanal parfumerie. 
+**SwissMax BEAUTY GRP LIMITED** is a prestige global beauty maison and digital flagship dedicated to high-performance skincare, bespoke cosmetics, and artisanal haute parfumerie.
 
-Inspired by editorial haute-couture boutique layouts (such as 755.Boutique), the platform blends a clean, minimalist **White, Gold, and Black** design system with a lightweight, modern decoupled architecture. Every element is designed to feel refined, fast, and elegant without backshadow gradients or artificial artifacts.
+Engineered with Swiss alpine botanical science and French haute-parfumerie traditions, SwissMax pairs rare raw materials with clinical cellular formulations. 
+
+### Design Philosophy
+Inspired by high-fashion editorial layouts (such as 755.Boutique), the digital experience adheres to a curated **White, Gold, and Obsidian Black** aesthetic:
+- **Clean Luxury Aesthetic**: Zero backshadow gradients or visual noise—relying instead on hairlines, generous whitespace, and classical typography (*Cinzel*, *Cormorant Garamond*, and *Montserrat*).
+- **Split-Hero Editorial Architecture**: Highlighting campaign visuals on one flank with curated editorial storytelling on the other.
+- **Lightweight Decoupled Stack**: Fast, responsive client-side React 18 application connected seamlessly to a Python/Django inventory and order management system.
 
 ---
 
