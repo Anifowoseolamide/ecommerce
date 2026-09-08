@@ -6,3 +6,6 @@ sqlparse==0.5.3
 tzdata==2025.2
 razorpay==1.4.2
 reportlab==4.0.7
+setuptools<70
+python-dotenv
+django-cors-headers==4.9.0
