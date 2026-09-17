@@ -19,13 +19,43 @@ def banner_to_dict(banner):
     if banner.right_banner_image:
         right_img = banner.right_banner_image.url
 
+    # Query all active HeroBanner records to generate dynamic slides
+    active_banners = HeroBanner.objects.filter(is_active=True).order_by('create_at')
+    slides = []
+    for idx, b in enumerate(active_banners):
+        b_left = b.left_banner_image.url if b.left_banner_image else (b.left_banner_url or 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=85')
+        b_right = b.right_banner_image.url if b.right_banner_image else (b.right_banner_url or 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=1200&q=85')
+        slides.append({
+            'id': str(b.uid),
+            'title': b.title,
+            'subtitle': b.subtitle,
+            'button_text': b.button_text,
+            'left_banner_image': b_left,
+            'right_banner_image': b_right,
+            'right_title': 'ATELIER RESERVES',
+            'right_eyebrow': 'Limited Release'
+        })
+
+    if not slides:
+        slides = [{
+            'id': str(banner.uid),
+            'title': banner.title,
+            'subtitle': banner.subtitle,
+            'button_text': banner.button_text,
+            'left_banner_image': left_img or 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=85',
+            'right_banner_image': right_img or 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=1200&q=85',
+            'right_title': 'ATELIER RESERVES',
+            'right_eyebrow': 'Limited Release'
+        }]
+
     return {
         'id': str(banner.uid),
         'title': banner.title,
         'subtitle': banner.subtitle,
         'button_text': banner.button_text,
-        'left_banner_image': left_img or '/media/images/banners/hero_skincare.jpg',
-        'right_banner_image': right_img or '/media/images/banners/hero_perfume.jpg',
+        'left_banner_image': left_img or slides[0]['left_banner_image'],
+        'right_banner_image': right_img or slides[0]['right_banner_image'],
+        'slides': slides,
         'announcement_text': banner.announcement_text,
         'announcement_link_text': banner.announcement_link_text,
         'countdown_days': banner.countdown_days,
@@ -34,6 +64,7 @@ def banner_to_dict(banner):
         'countdown_seconds': banner.countdown_seconds,
         'is_active': banner.is_active,
     }
+
 
 
 def get_banners(request):

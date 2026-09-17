@@ -21,11 +21,17 @@ from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
+from django.shortcuts import redirect
 from Ecommerce import api_views
 
+def redirect_to_frontend(request):
+    return redirect("https://swissmax.netlify.app/")
+
 urlpatterns = [
-    path("", include('home.urls')),
+    path("", redirect_to_frontend, name="root_redirect"),
+    path("legacy-home/", include('home.urls')),
     path("product/", include('products.urls')),
+
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
     path("cart/", include("cart.urls")),

@@ -1,0 +1,245 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}Log in | SwissMax Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  /* Full page luxury background design */
+  body.login {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #f7f8fa !important;
+    background-image: 
+      radial-gradient(circle at 10% 20%, rgba(197, 155, 39, 0.12) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(197, 155, 39, 0.10) 0%, transparent 45%),
+      radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.03) 0%, transparent 60%) !important;
+    background-attachment: fixed;
+  }
+
+  /* Hide the top header on login page for clean presentation */
+  body.login #header {
+    display: none !important;
+  }
+
+  body.login div.breadcrumbs {
+    display: none !important;
+  }
+
+  /* Centered Login Container */
+  body.login #container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    max-width: 440px !important;
+    padding: 20px !important;
+    margin: auto !important;
+  }
+
+  body.login #content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Luxury White & Gold Login Card */
+  .login-card {
+    background: #ffffff !important;
+    border: 1.5px solid #e6cb7a !important;
+    border-radius: 16px !important;
+    box-shadow: 0 12px 35px -5px rgba(197, 155, 39, 0.15), 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+    padding: 36px 32px !important;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Top Gold Decorative Bar */
+  .login-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #c59b27 0%, #e6cb7a 50%, #c59b27 100%);
+  }
+
+  /* Logo & Branding Area */
+  .login-header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  .login-logo {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin: 0 auto 14px auto;
+    display: block;
+    border: 2px solid #c59b27;
+    box-shadow: 0 4px 14px rgba(197, 155, 39, 0.25);
+    background: #090d16;
+  }
+
+  .login-title {
+    margin: 0 0 6px 0;
+    color: #0f172a !important;
+    font-size: 1.35rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .login-subtitle {
+    margin: 0;
+    color: #854d0e !important;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  /* Form Fields & Labels - 100% Visible & High Contrast */
+  .form-row {
+    margin-bottom: 20px;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  .form-row label {
+    display: block !important;
+    color: #0f172a !important;
+    font-size: 0.88rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 8px !important;
+    text-align: left !important;
+  }
+
+  .form-row input[type="text"],
+  .form-row input[type="password"] {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    padding: 12px 14px !important;
+    font-size: 0.92rem !important;
+    transition: all 0.2s ease;
+  }
+
+  .form-row input[type="text"]:focus,
+  .form-row input[type="password"]:focus {
+    border-color: #c59b27 !important;
+    box-shadow: 0 0 0 3px rgba(197, 155, 39, 0.2) !important;
+    outline: none !important;
+  }
+
+  /* Submit Button: Solid Gold Gradient */
+  .submit-row {
+    margin-top: 26px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  .submit-row input[type="submit"] {
+    width: 100% !important;
+    background: linear-gradient(135deg, #b8860b 0%, #c59b27 50%, #d4af37 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.03em !important;
+    padding: 12px !important;
+    border: none !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 14px rgba(197, 155, 39, 0.3) !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .submit-row input[type="submit"]:hover {
+    background: linear-gradient(135deg, #9e7a17 0%, #b8860b 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(197, 155, 39, 0.4) !important;
+  }
+
+  /* Error notice styling */
+  .errornote {
+    background: #fef2f2 !important;
+    color: #991b1b !important;
+    border: 1px solid #fecaca !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    font-size: 0.86rem !important;
+    margin-bottom: 20px !important;
+    font-weight: 500 !important;
+  }
+
+  .login-footer {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.82rem;
+    color: #64748b;
+  }
+
+  .login-footer a {
+    color: #c59b27 !important;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .login-footer a:hover {
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-card">
+  <div class="login-header">
+    <img src="{% static 'images/swissmax-logo.jpg' %}" alt="SwissMax Beauty Logo" class="login-logo">
+    <h1 class="login-title">SwissMax Admin</h1>
+    <p class="login-subtitle">Luxury Commerce Management</p>
+  </div>
+
+  {% if form.errors and not form.non_field_errors %}
+    <p class="errornote">
+      {% if form.errors.items|length == 1 %}{% translate "Please correct the error below." %}{% else %}{% translate "Please correct the errors below." %}{% endif %}
+    </p>
+  {% endif %}
+
+  {% if form.non_field_errors %}
+    {% for error in form.non_field_errors %}
+      <p class="errornote">{{ error }}</p>
+    {% endfor %}
+  {% endif %}
+
+  <form action="{{ app_path }}" method="post" id="login-form">
+    {% csrf_token %}
+    <div class="form-row">
+      <label for="id_username">Username</label>
+      <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" placeholder="Enter your username">
+    </div>
+
+    <div class="form-row">
+      <label for="id_password">Password</label>
+      <input type="password" name="password" autocomplete="current-password" required id="id_password" placeholder="Enter your password">
+      <input type="hidden" name="next" value="{{ next }}">
+    </div>
+
+    <div class="submit-row">
+      <input type="submit" value="Log In">
+    </div>
+  </form>
+
+  <div class="login-footer">
+    <a href="https://swissmax.netlify.app/">← Return to SwissMax Storefront</a>
+  </div>
+</div>
+{% endblock %}
