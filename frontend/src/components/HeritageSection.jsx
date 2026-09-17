@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, ShieldCheck, Droplet, Sparkles } from 'lucide-react';
+import { Award, ShieldCheck, Droplet, Sparkles, Truck } from 'lucide-react';
 import { HERITAGE_FEATURE } from '../data/initialData';
 
 export default function HeritageSection({ onExploreClick }) {
@@ -11,12 +11,12 @@ export default function HeritageSection({ onExploreClick }) {
           <div className="heritage-image-wrapper">
             <img 
               src={HERITAGE_FEATURE.image} 
-              alt="Swiss Alpine Botanical Heritage" 
+              alt="SwissMax Beauty Tradefair Lagos" 
               className="heritage-img"
             />
             <div className="heritage-image-badge">
               <Sparkles size={16} color="var(--color-gold)" />
-              <span>SWISS CELLULAR LABORATORY • ZURICH</span>
+              <span>{HERITAGE_FEATURE.badge_text || "SwissMax Beauty . Tradefair, Lagos"}</span>
             </div>
           </div>
 
@@ -40,15 +40,15 @@ export default function HeritageSection({ onExploreClick }) {
             <div className="heritage-pillars">
               <div className="heritage-pillar-item">
                 <ShieldCheck size={16} color="var(--color-gold)" />
-                <span>Certified Swiss Alpine Purity</span>
+                <span>Certified distributor of over 30 OPM</span>
               </div>
               <div className="heritage-pillar-item">
-                <Droplet size={16} color="var(--color-gold)" />
-                <span>Glacial Bio-Fermented Extracts</span>
+                <Truck size={16} color="var(--color-gold)" />
+                <span>Western Africa wide Delivery</span>
               </div>
               <div className="heritage-pillar-item">
                 <Award size={16} color="var(--color-gold)" />
-                <span>Haute Parfumerie Master Formulations</span>
+                <span>Thailand, Korea, USA Products.</span>
               </div>
             </div>
 
@@ -57,7 +57,7 @@ export default function HeritageSection({ onExploreClick }) {
               onClick={onExploreClick}
               style={{ color: '#000', borderColor: '#000', marginTop: '24px' }}
             >
-              EXPLORE OUR FORMULATIONS
+              EXPLORE OUR PRODUCTS
             </button>
           </div>
         </div>

@@ -78,6 +78,7 @@ export default function Header({
                 onChange={(e) => onChangeCurrency(e.target.value)}
                 title="Select Currency"
               >
+                <option value="NGN">NGN ₦</option>
                 <option value="USD">USD $</option>
                 <option value="EUR">EUR €</option>
                 <option value="GBP">GBP £</option>
@@ -231,6 +232,7 @@ export default function Header({
                   onChange={(e) => onChangeCurrency(e.target.value)}
                   style={{ width: '100%', padding: '10px' }}
                 >
+                  <option value="NGN">NGN ₦ - Nigerian Naira</option>
                   <option value="USD">USD $ - US Dollar</option>
                   <option value="EUR">EUR € - Euro</option>
                   <option value="GBP">GBP £ - British Pound</option>

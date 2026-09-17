@@ -1,22 +1,14 @@
 import React from 'react';
 import { ArrowRight, Plus } from 'lucide-react';
-
-const CURRENCY_RATES = {
-  USD: { symbol: '$', rate: 1 },
-  EUR: { symbol: '€', rate: 0.92 },
-  GBP: { symbol: '£', rate: 0.79 },
-  CHF: { symbol: 'CHF ', rate: 0.88 },
-  GHS: { symbol: '₵', rate: 15.5 },
-};
+import { formatCurrency } from '../data/initialData';
 
 export default function ProductCard({ 
   product, 
-  currency = 'USD', 
+  currency = 'NGN', 
   onAddToCart, 
   onQuickView 
 }) {
-  const { symbol, rate } = CURRENCY_RATES[currency] || CURRENCY_RATES.USD;
-  const formattedPrice = (product.price * rate).toFixed(2);
+  const formattedPrice = formatCurrency(product.price, currency);
 
   return (
     <div className="product-card">
@@ -50,7 +42,7 @@ export default function ProductCard({
         <p className="product-desc">{product.description}</p>
 
         <div className="product-footer-row">
-          <span className="product-price">{symbol}{formattedPrice}</span>
+          <span className="product-price">{formattedPrice}</span>
           <button 
             className="view-details-btn" 
             onClick={() => onQuickView(product)}

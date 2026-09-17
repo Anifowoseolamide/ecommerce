@@ -39,8 +39,8 @@ export default function ProductGrid({
     <section className="catalog-section" id="catalog">
       <div className="container">
         <div className="section-header">
-          <span className="section-label">SWISS PRECISION FORMULATIONS</span>
-          <h2 className="section-title">FEATURED EDITIONS</h2>
+          <span className="section-label">SWISSMAX BEAUTY TOP PICKS</span>
+          <h2 className="section-title">FEATURED PRODUCTS</h2>
         </div>
 
         {/* Filter and Sort Bar */}

@@ -26,7 +26,12 @@ export async function fetchBannerData() {
   const local = localStorage.getItem(STORAGE_KEYS.BANNER);
   if (local) {
     try {
-      return JSON.parse(local);
+      const parsed = JSON.parse(local);
+      if (parsed && parsed.title === 'ICONIC SWISS BEAUTY') {
+        localStorage.setItem(STORAGE_KEYS.BANNER, JSON.stringify(INITIAL_BANNER));
+        return INITIAL_BANNER;
+      }
+      return parsed;
     } catch (e) {}
   }
   return INITIAL_BANNER;
@@ -89,7 +94,14 @@ export async function fetchCategoriesData() {
 
   const local = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
   if (local) {
-    try { return JSON.parse(local); } catch(e){}
+    try { 
+      const parsed = JSON.parse(local);
+      if (Array.isArray(parsed) && parsed.some(c => c.slug === 'skincare' && c.description.includes('Advanced Swiss botanical'))) {
+        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
+        return INITIAL_CATEGORIES;
+      }
+      return parsed; 
+    } catch(e){}
   }
   return INITIAL_CATEGORIES;
 }

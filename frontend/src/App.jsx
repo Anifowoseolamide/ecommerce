@@ -42,7 +42,7 @@ export default function App() {
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
   
-  const [currency, setCurrency] = useState('USD');
+  const [currency, setCurrency] = useState('NGN');
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   
