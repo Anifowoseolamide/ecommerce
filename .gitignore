@@ -8,6 +8,7 @@ myenv/
 env/
 venv/
 *.sqlite3-journal
+staticfiles/
 
 # Node / Frontend
 node_modules/
