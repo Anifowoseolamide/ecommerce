@@ -1,14 +1,20 @@
 {% extends "admin/index.html" %}
 
-{% block content %}
+{% block sidebar %}
+  {{ block.super }}
   {% if request.user.is_superuser %}
-  <div class="module">
-    <h2>Danger Zone</h2>
-    <p>
-      <a class="deletelink" href="{% url 'admin:delete_all' %}">Delete all data (flush database)</a>
-      <br><small>This action is restricted to superusers and will remove all data from the database.</small>
-    </p>
+  <div class="module" style="margin-top: 24px; border: 1px solid #fee2e2; border-radius: 8px; overflow: hidden; background: #fff;">
+    <h2 style="background: #fef2f2; color: #b91c1c; font-size: 13px; font-weight: 600; padding: 10px 14px; margin: 0; border-bottom: 1px solid #fee2e2;">
+      Danger Zone
+    </h2>
+    <div style="padding: 12px 14px;">
+      <a class="deletelink" href="{% url 'admin:delete_all' %}" style="color: #dc2626; font-weight: 500; font-size: 13px;">
+        Flush database (delete all data)
+      </a>
+      <p style="margin: 6px 0 0 0; font-size: 11px; color: #7f1d1d;">
+        Restricted to superusers. Irreversibly removes all records.
+      </p>
+    </div>
   </div>
   {% endif %}
-  {{ block.super }}
 {% endblock %}

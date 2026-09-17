@@ -35,3 +35,9 @@ def get_urls():
 
 # Monkey patch admin site to add our URL
 admin.site.get_urls = get_urls
+
+# SwissMax Custom Admin Branding
+admin.site.site_header = "SwissMax Commerce Admin"
+admin.site.site_title = "SwissMax Admin Portal"
+admin.site.index_title = "Store Dashboard & Inventory Administration"
+

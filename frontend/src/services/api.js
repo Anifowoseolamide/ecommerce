@@ -1,5 +1,7 @@
 import { INITIAL_BANNER, INITIAL_CATEGORIES, INITIAL_PRODUCTS } from '../data/initialData';
 
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
+
 const STORAGE_KEYS = {
   BANNER: 'swissmax_banner_data',
   CATEGORIES: 'swissmax_categories_data',
@@ -8,7 +10,8 @@ const STORAGE_KEYS = {
 
 export async function fetchBannerData() {
   try {
-    const res = await fetch('/api/banners/');
+    const res = await fetch(`${API_BASE}/api/banners/`);
+
     if (res.ok) {
       const data = await res.json();
       if (data.banner) {
@@ -43,7 +46,7 @@ export async function saveBannerData(updatedBanner, imageFiles = {}) {
       formData.append('right_image_file', imageFiles.right_image_file);
     }
 
-    const res = await fetch('/api/banners/update/', {
+    const res = await fetch(`${API_BASE}/api/banners/update/`, {
       method: 'POST',
       body: formData,
     });
@@ -65,7 +68,7 @@ export async function saveBannerData(updatedBanner, imageFiles = {}) {
 
 export async function fetchCategoriesData() {
   try {
-    const res = await fetch('/api/categories/');
+    const res = await fetch(`${API_BASE}/api/categories/`);
     if (res.ok) {
       const data = await res.json();
       if (data.categories && data.categories.length > 0) {
@@ -98,7 +101,7 @@ export async function saveCategoriesData(categoriesList) {
 
 export async function fetchProductsData() {
   try {
-    const res = await fetch('/api/products/');
+    const res = await fetch(`${API_BASE}/api/products/`);
     if (res.ok) {
       const data = await res.json();
       if (data.products && data.products.length > 0) {
@@ -135,7 +138,7 @@ export async function uploadMediaFile(file) {
   try {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch('/api/upload/', {
+    const res = await fetch(`${API_BASE}/api/upload/`, {
       method: 'POST',
       body: formData,
     });

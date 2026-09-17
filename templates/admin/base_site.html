@@ -1,0 +1,360 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_title|default:_('SwissMax Admin') }}{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+  /* =========================================================
+     SwissMax Luxury Gold & White Admin Theme
+     High Contrast - Guarantees Every Single Word is Visible
+     ========================================================= */
+  :root, [data-theme="dark"], [data-theme="light"] {
+    --gold-primary: #c59b27;
+    --gold-dark: #9e7a17;
+    --gold-light: #fef8e7;
+    --gold-border: #e6cb7a;
+    --bg-main: #f8fafc;
+    --white: #ffffff;
+    --text-dark: #0f172a;
+    --text-muted: #475569;
+    --border-subtle: #e2e8f0;
+  }
+
+  /* Body background & Global Font */
+  html, body {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  }
+
+  /* Header: Sleek Obsidian with Gold Border */
+  #header {
+    background: #090d16 !important;
+    color: #ffffff !important;
+    padding: 14px 28px !important;
+    border-bottom: 2px solid #c59b27 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  #branding {
+    float: none !important;
+    margin: 0 !important;
+  }
+
+  #branding h1, #site-name {
+    margin: 0 !important;
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  #branding h1 a, #site-name a {
+    color: #ffffff !important;
+    text-decoration: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  #branding h1 a::after, #site-name a::after {
+    content: "•";
+    color: #c59b27;
+    font-size: 1.3rem;
+  }
+
+  #user-tools {
+    float: none !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+    color: #cbd5e1 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px !important;
+  }
+
+  #user-tools a {
+    color: #ffffff !important;
+    font-weight: 500 !important;
+    text-decoration: none !important;
+  }
+
+  #user-tools a:hover {
+    color: #e6cb7a !important;
+    text-decoration: underline !important;
+  }
+
+  /* Breadcrumbs */
+  div.breadcrumbs {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 10px 28px !important;
+    font-size: 13px !important;
+    color: #64748b !important;
+  }
+
+  div.breadcrumbs a {
+    color: #c59b27 !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+  }
+
+  div.breadcrumbs a:hover {
+    color: #9e7a17 !important;
+    text-decoration: underline !important;
+  }
+
+  /* Content Area */
+  #content {
+    padding: 28px !important;
+    background: transparent !important;
+  }
+
+  #content h1 {
+    color: #0f172a !important;
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 20px !important;
+    letter-spacing: -0.01em !important;
+  }
+
+  /* Dashboard Modules & Cards */
+  .module {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    margin-bottom: 24px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  /* GOLD SECTION HEADERS (ACCOUNTS, CART, PRODUCTS, etc.) */
+  .module caption, 
+  .module h2, 
+  table caption {
+    background: linear-gradient(135deg, #b8860b 0%, #c59b27 100%) !important;
+    color: #ffffff !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 11px 18px !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    border-bottom: 1px solid #9e7a17 !important;
+    text-align: left !important;
+  }
+
+  .module caption a, 
+  .module h2 a, 
+  table caption a {
+    color: #ffffff !important;
+    text-decoration: none !important;
+  }
+
+  /* TABLE ROWS - FORCED CLEAN WHITE & HIGH CONTRAST DARK TEXT */
+  .module table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    background: #ffffff !important;
+  }
+
+  /* Override any alternating row color from Django's CSS */
+  .module table tr,
+  .module table tr.row1,
+  .module table tr.row2,
+  .module table tr:nth-child(odd),
+  .module table tr:nth-child(even) {
+    background: #ffffff !important;
+  }
+
+  .module table tr:hover,
+  .module table tr.row1:hover,
+  .module table tr.row2:hover {
+    background: #fffdf5 !important;
+  }
+
+  .module table th,
+  .module table td {
+    padding: 12px 18px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    font-size: 14px !important;
+    color: #0f172a !important;
+    background: transparent !important;
+  }
+
+  .module table tr:last-child th,
+  .module table tr:last-child td {
+    border-bottom: none !important;
+  }
+
+  /* Model Name Links (Profiles, Groups, Products, etc.) */
+  .module table th a,
+  .module table td a {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    text-decoration: none !important;
+  }
+
+  .module table th a:hover {
+    color: #c59b27 !important;
+  }
+
+  /* Action Buttons (+ Add, Change) */
+  a.addlink {
+    color: #15803d !important;
+    background: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+    padding: 4px 10px !important;
+    border-radius: 5px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    display: inline-block !important;
+    margin-right: 6px !important;
+  }
+
+  a.addlink:hover {
+    background: #dcfce7 !important;
+    border-color: #86efac !important;
+  }
+
+  a.changelink {
+    color: #854d0e !important;
+    background: #fefce8 !important;
+    border: 1px solid #fef08a !important;
+    padding: 4px 10px !important;
+    border-radius: 5px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    display: inline-block !important;
+  }
+
+  a.changelink:hover {
+    background: #fef9c3 !important;
+    border-color: #fde047 !important;
+  }
+
+  /* Recent Actions Sidebar */
+  #content-related .module {
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  #content-related .module h2 {
+    background: #0f172a !important;
+    color: #ffffff !important;
+    border-bottom: 2px solid #c59b27 !important;
+  }
+
+  #content-related .module h3 {
+    color: #64748b !important;
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding: 10px 16px 4px !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+  }
+
+  #content-related .module p {
+    padding: 12px 16px !important;
+    margin: 0 !important;
+    color: #475569 !important;
+    background: #ffffff !important;
+    font-size: 13px !important;
+  }
+
+  #content-related .actionlist {
+    background: #ffffff !important;
+    padding: 8px 16px 16px !important;
+    margin: 0 !important;
+  }
+
+  #content-related .actionlist li {
+    padding: 6px 0 !important;
+    color: #0f172a !important;
+    font-size: 13px !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+  }
+
+  /* Buttons & Form Controls */
+  .button, input[type="submit"], input[type="button"], .submit-row input, a.button {
+    background: #0f172a !important;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 9px 18px !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+  }
+
+  .button:hover, input[type="submit"]:hover {
+    background: #1e293b !important;
+  }
+
+  .button.default, input[type="submit"].default {
+    background: linear-gradient(135deg, #b8860b 0%, #c59b27 100%) !important;
+    color: #ffffff !important;
+  }
+
+  .button.default:hover, input[type="submit"].default:hover {
+    background: linear-gradient(135deg, #9e7a17 0%, #b8860b 100%) !important;
+  }
+
+  /* Changelist Result Table */
+  #result_list {
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+  }
+
+  #result_list th {
+    background: #fdf8e7 !important;
+    color: #854d0e !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding: 11px 16px !important;
+    border-bottom: 1px solid #e6cb7a !important;
+  }
+
+  #result_list td {
+    padding: 11px 16px !important;
+    font-size: 13px !important;
+    color: #0f172a !important;
+    border-bottom: 1px solid #f1f5f9 !important;
+    background: #ffffff !important;
+  }
+
+  #result_list tr.row1, #result_list tr.row2 {
+    background: #ffffff !important;
+  }
+
+  #result_list tr:hover td {
+    background: #fffdf5 !important;
+  }
+
+  #toolbar {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    padding: 12px 18px !important;
+    margin-bottom: 16px !important;
+  }
+</style>
+{% endblock %}
+
+{% block branding %}
+<div id="site-name">
+  <a href="{% url 'admin:index' %}">SwissMax Admin</a>
+</div>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
