@@ -20,9 +20,9 @@ export default function Footer({ onSelectCategory, onOpenAdminLogin }) {
     <footer className="site-footer" id="brand-story">
       <div className="container">
         <div className="footer-grid">
-          {/* Brand Story */}
+          {/* 1st Column: Brand Mission */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
               <img
                 src={swissmaxLogo}
                 alt="SwissMax Logo"
@@ -33,122 +33,84 @@ export default function Footer({ onSelectCategory, onOpenAdminLogin }) {
               </span>
             </div>
             <p className="footer-text">
-              SwissMax BEAUTY GRP LIMITED crafts exceptional formulations at the intersection of Swiss cellular science, botanical purity, and haute parfumerie. We curate iconic beauty editions that elevate daily rituals into transcendent experiences.
+              SwissMax Beauty Group LTD curates and imports exceptional, high-in-demand and effective Beauty products directly from original Manufacturers, making them available to our customers at highly competitive prices
             </p>
           </div>
 
-          {/* Flagship Disciplines */}
+          {/* 2nd Column: Collections */}
           <div>
             <h4 className="footer-col-title">COLLECTIONS</h4>
             <ul className="footer-links">
               <li>
                 <a href="#catalog" onClick={() => onSelectCategory('skincare')}>
-                  Skincare Cellular
+                  Skincare
                 </a>
               </li>
               <li>
                 <a href="#catalog" onClick={() => onSelectCategory('cosmetics')}>
-                  Cosmetics & Complexion
+                  Cosmetics
                 </a>
               </li>
               <li>
                 <a href="#catalog" onClick={() => onSelectCategory('perfume')}>
-                  Haute Parfumerie
-                </a>
-              </li>
-              <li>
-                <a href="#catalog" onClick={() => onSelectCategory('all')}>
-                  All Editions
+                  Perfumes & Sprays
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Client Services */}
+          {/* 3rd Column: Client Privilege */}
           <div>
-            <h4 className="footer-col-title">CLIENT PRIVILEGE</h4>
+            <h4 className="footer-col-title">Client Privilege</h4>
             <ul className="footer-links">
-              <li><a href="#brand-story">Swiss Heritage</a></li>
-              <li><a href="#brand-story">Bespoke Consultations</a></li>
-              <li><a href="#brand-story">Global Courier Delivery</a></li>
-              <li><a href="#brand-story">Authentication Certificate</a></li>
+              <li><a href="#brand-story">Consultation</a></li>
+              <li><a href="#brand-story">Global Delivery</a></li>
+              <li><a href="#brand-story">Monthly Newsletter</a></li>
             </ul>
           </div>
 
-          {/* Newsletter */}
+          {/* 4th Column: Resellers Privilege */}
           <div>
-            <h4 className="footer-col-title">VIP PRIVATE SALON</h4>
-            <p className="footer-text" style={{ marginBottom: '14px' }}>
-              Receive privileged access to private archives, limited extrait releases, and private client invitations.
-            </p>
-            {subscribed ? (
-              <p style={{ color: 'var(--color-gold)', fontSize: '12px', fontWeight: '600' }}>
-                ✓ You are now enrolled in the SwissMax VIP registry.
-              </p>
-            ) : (
-              <form onSubmit={handleSubscribe} style={{ display: 'flex', gap: '6px' }}>
-                <input
-                  type="email"
-                  required
-                  placeholder="Enter your email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{
-                    background: '#181A20',
-                    border: '1px solid var(--border-dark)',
-                    color: '#FFF',
-                    padding: '8px 12px',
-                    fontSize: '12px',
-                    borderRadius: '2px',
-                    flexGrow: 1,
-                    outline: 'none'
-                  }}
-                />
-                <button
-                  type="submit"
-                  style={{
-                    background: 'var(--color-gold)',
-                    color: '#0B0C0E',
-                    padding: '8px 16px',
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    letterSpacing: '0.08em',
-                    borderRadius: '2px'
-                  }}
-                >
-                  JOIN
-                </button>
-              </form>
-            )}
+            <h4 className="footer-col-title">Resellers Privilege</h4>
+            <ul className="footer-links">
+              <li><a href="#inventory-archive">Global Delivery</a></li>
+              <li><a href="#inventory-archive">Business Consultation</a></li>
+              <li><a href="#inventory-archive">Monthly Newsletter</a></li>
+              <li><a href="#inventory-archive">Market Trend Update</a></li>
+              <li><a href="#inventory-archive">Supplier access</a></li>
+            </ul>
           </div>
         </div>
 
-        {/* Bottom Bar */}
+        {/* Bottom Bar: Left, Middle, Right */}
         <div className="footer-bottom">
-          <span>
-            © {new Date().getFullYear()} SwissMax BEAUTY GRP LIMITED. All rights reserved.
+          <span style={{ fontSize: '11px' }}>
+            @2026 SWISSMAX BEAUTY GRP LIMITED. All rights reserved
           </span>
-          <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-            <span style={{ color: 'var(--color-gold)' }}>Zurich • Geneva • London • Accra</span>
-            <span>Terms of Privilege</span>
-            <span>Privacy Policy</span>
+          <span style={{ color: 'var(--color-gold)', fontWeight: '600', letterSpacing: '0.08em', fontSize: '11px' }}>
+            Designed by AIPS
+          </span>
+          <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <span style={{ color: 'var(--text-light-muted)', fontSize: '11px' }}>
+              Lagos. Abuja. Accra. Freetown
+            </span>
             <button
               onClick={onOpenAdminLogin}
               style={{
                 background: 'none',
                 border: 'none',
-                color: 'rgba(255, 255, 255, 0.45)',
-                fontSize: '11px',
+                color: 'rgba(255, 255, 255, 0.35)',
+                fontSize: '10px',
                 cursor: 'pointer',
                 letterSpacing: '0.04em',
                 transition: 'color 0.2s',
                 padding: '0 4px',
               }}
               onMouseEnter={(e) => (e.target.style.color = 'var(--color-gold)')}
-              onMouseLeave={(e) => (e.target.style.color = 'rgba(255, 255, 255, 0.45)')}
-              title="SwissMax Admin Studio"
+              onMouseLeave={(e) => (e.target.style.color = 'rgba(255, 255, 255, 0.35)')}
+              title="Staff Admin Access"
             >
-              🔒 Staff Admin
+              🔒 Staff
             </button>
           </div>
         </div>

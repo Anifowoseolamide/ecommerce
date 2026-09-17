@@ -6,8 +6,8 @@ export default function CategorySection({ categories, onSelectCategory }) {
     <section className="categories-section">
       <div className="container">
         <div className="section-header">
-          <span className="section-label">CURATED COLLECTIONS</span>
-          <h2 className="section-title">DISCOVER BY DISCIPLINE</h2>
+          <span className="section-label">AFFORDABLE BEAUTY</span>
+          <h2 className="section-title">CURATED WITH EXPERIENCE</h2>
         </div>
 
         <div className="categories-grid">

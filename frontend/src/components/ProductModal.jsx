@@ -1,22 +1,14 @@
 import React, { useState } from 'react';
 import { X, Check, ShieldCheck, Truck, Sparkles } from 'lucide-react';
+import { formatCurrency } from '../data/initialData';
 
-const CURRENCY_RATES = {
-  USD: { symbol: '$', rate: 1 },
-  EUR: { symbol: '€', rate: 0.92 },
-  GBP: { symbol: '£', rate: 0.79 },
-  CHF: { symbol: 'CHF ', rate: 0.88 },
-  GHS: { symbol: '₵', rate: 15.5 },
-};
-
-export default function ProductModal({ product, currency, onClose, onAddToCart }) {
+export default function ProductModal({ product, currency = 'NGN', onClose, onAddToCart }) {
   const [qty, setQty] = useState(1);
   const [selectedSize, setSelectedSize] = useState('Standard');
 
   if (!product) return null;
 
-  const { symbol, rate } = CURRENCY_RATES[currency] || CURRENCY_RATES.USD;
-  const formattedPrice = (product.price * rate).toFixed(2);
+  const formattedPrice = formatCurrency(product.price, currency);
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -37,7 +29,7 @@ export default function ProductModal({ product, currency, onClose, onAddToCart }
             {product.name}
           </h2>
           <div style={{ fontSize: '20px', fontWeight: '600', color: '#111', marginBottom: '18px' }}>
-            {symbol}{formattedPrice}
+            {formattedPrice}
           </div>
 
           <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.7', marginBottom: '24px' }}>

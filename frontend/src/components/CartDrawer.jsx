@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
 import { X, Trash2, ArrowRight, ShieldCheck } from 'lucide-react';
-
-const CURRENCY_RATES = {
-  USD: { symbol: '$', rate: 1 },
-  EUR: { symbol: '€', rate: 0.92 },
-  GBP: { symbol: '£', rate: 0.79 },
-  CHF: { symbol: 'CHF ', rate: 0.88 },
-  GHS: { symbol: '₵', rate: 15.5 },
-};
+import { formatCurrency } from '../data/initialData';
 
 export default function CartDrawer({
   isOpen,
   onClose,
   cart,
-  currency,
+  currency = 'NGN',
   onUpdateQty,
   onRemoveItem,
   onClearCart
@@ -24,8 +17,6 @@ export default function CartDrawer({
   const [orderComplete, setOrderComplete] = useState(false);
 
   if (!isOpen) return null;
-
-  const { symbol, rate } = CURRENCY_RATES[currency] || CURRENCY_RATES.USD;
 
   const rawSubtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const discountAmount = rawSubtotal * (discountPercent / 100);
@@ -101,7 +92,7 @@ export default function CartDrawer({
                   <div className="cart-item-details">
                     <h5 className="cart-item-title">{item.name}</h5>
                     <div className="cart-item-price">
-                      {symbol}{(item.price * rate).toFixed(2)}
+                      {formatCurrency(item.price * item.quantity, currency)}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
@@ -164,12 +155,12 @@ export default function CartDrawer({
             <div className="drawer-footer">
               <div className="subtotal-row" style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
                 <span>Subtotal</span>
-                <span>{symbol}{(rawSubtotal * rate).toFixed(2)}</span>
+                <span>{formatCurrency(rawSubtotal, currency)}</span>
               </div>
               {discountPercent > 0 && (
                 <div className="subtotal-row" style={{ color: '#2E7D32', fontSize: '12px' }}>
                   <span>Discount ({discountPercent}%)</span>
-                  <span>-{symbol}{(discountAmount * rate).toFixed(2)}</span>
+                  <span>-{formatCurrency(discountAmount, currency)}</span>
                 </div>
               )}
               <div className="subtotal-row" style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
@@ -178,7 +169,7 @@ export default function CartDrawer({
               </div>
               <div className="subtotal-row" style={{ fontSize: '16px', borderTop: '1px solid var(--border-light)', paddingTop: '12px' }}>
                 <span>Total</span>
-                <span>{symbol}{(finalTotal * rate).toFixed(2)}</span>
+                <span>{formatCurrency(finalTotal, currency)}</span>
               </div>
 
               <button 
@@ -186,7 +177,7 @@ export default function CartDrawer({
                 onClick={handleCheckout}
                 disabled={isCheckingOut}
               >
-                {isCheckingOut ? "PROCESSING VIP CHECKOUT..." : `CHECKOUT • ${symbol}${(finalTotal * rate).toFixed(2)}`}
+                {isCheckingOut ? "PROCESSING VIP CHECKOUT..." : `CHECKOUT • ${formatCurrency(finalTotal, currency)}`}
               </button>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '12px', fontSize: '10px', color: 'var(--text-muted)' }}>
