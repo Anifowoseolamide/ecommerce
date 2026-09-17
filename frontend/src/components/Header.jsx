@@ -125,16 +125,6 @@ export default function Header({
                 <ShoppingBag size={19} />
                 {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
               </button>
-
-              {/* Switch between Storefront and Image Management Dashboard */}
-              <button 
-                className={`admin-toggle-btn ${currentView === 'dashboard' ? 'active' : ''}`}
-                onClick={() => onToggleView(currentView === 'store' ? 'dashboard' : 'store')}
-                title="Open Image & Banner Studio"
-              >
-                <Sliders size={14} />
-                <span className="admin-btn-label">{currentView === 'store' ? 'Dashboard' : 'Store'}</span>
-              </button>
             </div>
           </div>
         </div>
@@ -247,18 +237,6 @@ export default function Header({
                   <option value="CHF">CHF Fr - Swiss Franc</option>
                   <option value="GHS">GHS ₵ - Ghanaian Cedi</option>
                 </select>
-
-                <button
-                  className="btn-discover"
-                  onClick={() => {
-                    onToggleView(currentView === 'store' ? 'dashboard' : 'store');
-                    setMobileMenuOpen(false);
-                  }}
-                  style={{ width: '100%', marginTop: '16px', justifyContent: 'center', borderColor: 'var(--color-gold)', color: 'var(--color-gold)' }}
-                >
-                  <Sliders size={13} style={{ marginRight: '6px' }} />
-                  <span>{currentView === 'store' ? 'OPEN ADMIN DASHBOARD' : 'BACK TO STOREFRONT'}</span>
-                </button>
               </div>
             </div>
           </div>

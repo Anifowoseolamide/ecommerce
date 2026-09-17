@@ -11,8 +11,10 @@ export default function Dashboard({
   products,
   onUpdateProduct,
   onAddProduct,
-  onBackToStore
+  onBackToStore,
+  onLogoutAdmin
 }) {
+
   const [activeTab, setActiveTab] = useState('hero'); // 'hero' | 'categories' | 'products'
   
   // Slides State (Rotating cosmetic & beauty banners)
@@ -178,15 +180,38 @@ export default function Dashboard({
             </p>
           </div>
 
-          <button 
-            className="btn-discover"
-            onClick={onBackToStore}
-            style={{ borderColor: '#0B0C0E', color: '#0B0C0E', display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <ArrowLeft size={14} />
-            <span>VIEW LIVE STORE</span>
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button 
+              className="btn-discover"
+              onClick={onBackToStore}
+              style={{ borderColor: '#0B0C0E', color: '#0B0C0E', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <ArrowLeft size={14} />
+              <span>VIEW LIVE STORE</span>
+            </button>
+            {onLogoutAdmin && (
+              <button
+                onClick={onLogoutAdmin}
+                style={{
+                  background: '#fef2f2',
+                  border: '1.5px solid #fca5a5',
+                  color: '#b91c1c',
+                  padding: '9px 16px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: '800',
+                  letterSpacing: '0.06em',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                title="Lock admin session"
+              >
+                🔒 LOG OUT ADMIN
+              </button>
+            )}
+          </div>
         </div>
+
 
         {/* Tab Navigation */}
         <div className="dashboard-tabs">

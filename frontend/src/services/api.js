@@ -157,3 +157,91 @@ export async function uploadMediaFile(file) {
     reader.readAsDataURL(file);
   });
 }
+
+export async function loginAdmin(username, password) {
+  try {
+    const res = await fetch(`${API_BASE}/api/admin/login/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error('Admin login failed:', err);
+    return { success: false, error: 'Unable to connect to backend authentication server.' };
+  }
+}
+
+export async function createProductOnBackend(productData, imageFile = null) {
+  try {
+    const formData = new FormData();
+    formData.append('name', productData.name);
+    formData.append('price', productData.price);
+    formData.append('description', productData.description || '');
+    formData.append('category', productData.category_slug || '');
+    if (imageFile) {
+      formData.append('image', imageFile);
+    } else if (productData.image) {
+      formData.append('image_url', productData.image);
+    }
+
+    const res = await fetch(`${API_BASE}/api/products/create/`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.product;
+    }
+  } catch (e) {
+    console.error('Failed to create product on backend:', e);
+  }
+  return null;
+}
+
+export async function updateProductOnBackend(productId, updates, imageFile = null) {
+  try {
+    const formData = new FormData();
+    if (updates.name) formData.append('name', updates.name);
+    if (updates.price) formData.append('price', updates.price);
+    if (updates.description) formData.append('description', updates.description);
+    if (updates.category_slug) formData.append('category', updates.category_slug);
+    if (imageFile) formData.append('image', imageFile);
+
+    const res = await fetch(`${API_BASE}/api/products/update/${productId}/`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.product;
+    }
+  } catch (e) {
+    console.error('Failed to update product on backend:', e);
+  }
+  return null;
+}
+
+export async function updateCategoryOnBackend(categoryId, name, imageFile = null) {
+  try {
+    const formData = new FormData();
+    if (name) formData.append('category_name', name);
+    if (imageFile) formData.append('image', imageFile);
+
+    const res = await fetch(`${API_BASE}/api/categories/update/${categoryId}/`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.category;
+    }
+  } catch (e) {
+    console.error('Failed to update category on backend:', e);
+  }
+  return null;
+}
+
