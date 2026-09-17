@@ -10,6 +10,8 @@ import Dashboard from './components/Dashboard';
 import HeritageSection from './components/HeritageSection';
 import LookbookSection from './components/LookbookSection';
 import Footer from './components/Footer';
+import AdminLoginModal from './components/AdminLoginModal';
+
 
 import {
   fetchBannerData,
@@ -17,13 +19,25 @@ import {
   fetchCategoriesData,
   saveCategoriesData,
   fetchProductsData,
-  saveProductsData
+  saveProductsData,
+  createProductOnBackend,
+  updateProductOnBackend
 } from './services/api';
 
 import { INITIAL_BANNER, INITIAL_CATEGORIES, INITIAL_PRODUCTS } from './data/initialData';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('store'); // 'store' | 'dashboard'
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
+    try {
+      const auth = localStorage.getItem('swissmax_admin_auth') || sessionStorage.getItem('swissmax_admin_auth');
+      return Boolean(auth);
+    } catch (e) {
+      return false;
+    }
+  });
+
   const [banner, setBanner] = useState(INITIAL_BANNER);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
   const [products, setProducts] = useState(INITIAL_PRODUCTS);
@@ -97,7 +111,34 @@ export default function App() {
     setCart([]);
   };
 
-  // Dashboard Update Handlers
+  // Check for ?admin=true query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('admin') === 'true') {
+      if (isAdminAuthenticated) {
+        setCurrentView('dashboard');
+      } else {
+        setIsAdminModalOpen(true);
+      }
+    }
+  }, [isAdminAuthenticated]);
+
+  const handleOpenAdminStudio = () => {
+    if (isAdminAuthenticated) {
+      setCurrentView('dashboard');
+    } else {
+      setIsAdminModalOpen(true);
+    }
+  };
+
+  const handleLogoutAdmin = () => {
+    localStorage.removeItem('swissmax_admin_auth');
+    sessionStorage.removeItem('swissmax_admin_auth');
+    setIsAdminAuthenticated(false);
+    setCurrentView('store');
+  };
+
+  // Dashboard Update Handlers connected to Backend
   const handleUpdateBanner = async (updatedBanner, imageFiles) => {
     const saved = await saveBannerData(updatedBanner, imageFiles);
     setBanner(saved);
@@ -110,18 +151,35 @@ export default function App() {
   };
 
   const handleUpdateProduct = async (productId, updates) => {
+    // Sync with backend API
+    await updateProductOnBackend(productId, updates);
     const updated = products.map(p => p.id === productId ? { ...p, ...updates } : p);
     setProducts(updated);
     await saveProductsData(updated);
   };
 
   const handleAddProduct = async (newProd) => {
-    const updated = [newProd, ...products];
+    // Create directly on backend Supabase PostgreSQL database
+    const savedProd = await createProductOnBackend(newProd);
+    const productToAdd = savedProd ? {
+      id: savedProd.id,
+      name: savedProd.name,
+      slug: savedProd.slug,
+      price: savedProd.price,
+      description: savedProd.description,
+      category_name: savedProd.category_name,
+      category_slug: savedProd.category_slug,
+      image: savedProd.image || newProd.image,
+      tag: savedProd.category_name
+    } : newProd;
+
+    const updated = [productToAdd, ...products];
     setProducts(updated);
     await saveProductsData(updated);
   };
 
   const totalCartCount = cart.reduce((total, item) => total + item.quantity, 0);
+
 
   return (
     <div className="swissmax-app">
@@ -153,6 +211,7 @@ export default function App() {
           onUpdateProduct={handleUpdateProduct}
           onAddProduct={handleAddProduct}
           onBackToStore={() => setCurrentView('store')}
+          onLogoutAdmin={handleLogoutAdmin}
         />
       ) : (
         <main>
@@ -200,10 +259,13 @@ export default function App() {
       )}
 
       {/* 6. Luxury Footer */}
-      <Footer onSelectCategory={(slug) => {
-        if (currentView !== 'store') setCurrentView('store');
-        setActiveCategory(slug);
-      }} />
+      <Footer 
+        onSelectCategory={(slug) => {
+          if (currentView !== 'store') setCurrentView('store');
+          setActiveCategory(slug);
+        }} 
+        onOpenAdminLogin={handleOpenAdminStudio}
+      />
 
       {/* Product Quick View Modal */}
       <ProductModal
@@ -223,6 +285,17 @@ export default function App() {
         onRemoveItem={handleRemoveFromCart}
         onClearCart={handleClearCart}
       />
+
+      {/* Luxury Split-Card Admin Login Modal */}
+      <AdminLoginModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        onLoginSuccess={(user) => {
+          setIsAdminAuthenticated(true);
+          setCurrentView('dashboard');
+        }}
+      />
     </div>
   );
 }
+

@@ -363,3 +363,44 @@ def upload_file(request):
     file_url = f"{settings.MEDIA_URL}{saved_path}"
 
     return JsonResponse({'status': 'success', 'url': file_url})
+
+
+@csrf_exempt
+def api_admin_login(request):
+    """Authenticate staff / superuser for the frontend admin dashboard."""
+    from django.contrib.auth import authenticate, login
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+
+    if request.content_type and 'application/json' in request.content_type:
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+        except Exception:
+            data = {}
+    else:
+        data = request.POST
+
+    username = data.get('username', '').strip()
+    password = data.get('password', '').strip()
+
+    if not username or not password:
+        return JsonResponse({'success': False, 'error': 'Username and password are required.'}, status=400)
+
+    user = authenticate(request, username=username, password=password)
+    if user is not None:
+        if user.is_staff or user.is_superuser:
+            login(request, user)
+            return JsonResponse({
+                'success': True,
+                'user': {
+                    'username': user.username,
+                    'is_superuser': user.is_superuser,
+                    'is_staff': user.is_staff,
+                }
+            })
+        else:
+            return JsonResponse({'success': False, 'error': 'Access denied: Admin privileges required.'}, status=403)
+    else:
+        return JsonResponse({'success': False, 'error': 'Invalid username or password.'}, status=401)
+

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import swissmaxLogo from '../assets/swissmax-logo.jpg';
 
-export default function Footer({ onSelectCategory }) {
+export default function Footer({ onSelectCategory, onOpenAdminLogin }) {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -128,12 +128,31 @@ export default function Footer({ onSelectCategory }) {
           <span>
             © {new Date().getFullYear()} SwissMax BEAUTY GRP LIMITED. All rights reserved.
           </span>
-          <div style={{ display: 'flex', gap: '20px' }}>
+          <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
             <span style={{ color: 'var(--color-gold)' }}>Zurich • Geneva • London • Accra</span>
             <span>Terms of Privilege</span>
             <span>Privacy Policy</span>
+            <button
+              onClick={onOpenAdminLogin}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'rgba(255, 255, 255, 0.45)',
+                fontSize: '11px',
+                cursor: 'pointer',
+                letterSpacing: '0.04em',
+                transition: 'color 0.2s',
+                padding: '0 4px',
+              }}
+              onMouseEnter={(e) => (e.target.style.color = 'var(--color-gold)')}
+              onMouseLeave={(e) => (e.target.style.color = 'rgba(255, 255, 255, 0.45)')}
+              title="SwissMax Admin Studio"
+            >
+              🔒 Staff Admin
+            </button>
           </div>
         </div>
+
       </div>
     </footer>
   );
