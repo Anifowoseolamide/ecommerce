@@ -3,43 +3,54 @@
 
 {% block title %}Log in | SwissMax Admin{% endblock %}
 
+{% block extrastyle %}{% endblock %}
+
+{% block content_title %}{% endblock %}
+
 {% block extrahead %}
-{{ block.super }}
 <style>
-  /* Full page luxury background design */
-  body.login {
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    background-color: #f7f8fa !important;
-    background-image: 
-      radial-gradient(circle at 10% 20%, rgba(197, 155, 39, 0.12) 0%, transparent 40%),
-      radial-gradient(circle at 90% 80%, rgba(197, 155, 39, 0.10) 0%, transparent 45%),
-      radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.03) 0%, transparent 60%) !important;
-    background-attachment: fixed;
+  /* =======================================================
+     SwissMax Luxury Split-Screen Login Page
+     Theme: Pure Gold & Pure White with Touch of Black
+     ZERO GRAY
+     ======================================================= */
+  * {
+    box-sizing: border-box;
   }
 
-  /* Hide the top header on login page for clean presentation */
-  body.login #header {
+  /* Eliminate all default Django headers, breadcrumbs, titles */
+  body.login #header,
+  body.login div.breadcrumbs,
+  body.login #content > h1,
+  body.login #content-main > h1,
+  body.login > #container > #content > h1,
+  body.login h1:not(.form-title):not(.brand-title-large) {
     display: none !important;
   }
 
-  body.login div.breadcrumbs {
-    display: none !important;
+  /* Page background: Pure White with warm ambient Gold glow (Zero Gray) */
+  html, body.login {
+    margin: 0 !important;
+    padding: 24px !important;
+    min-height: 100vh !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background-color: #ffffff !important;
+    background: radial-gradient(circle at 10% 20%, #fdf8e9 0%, transparent 45%),
+                radial-gradient(circle at 90% 80%, #fcf6e5 0%, transparent 45%),
+                #ffffff !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
   }
 
-  /* Centered Login Container */
   body.login #container {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     width: 100% !important;
-    max-width: 440px !important;
-    padding: 20px !important;
+    max-width: 960px !important;
     margin: auto !important;
+    padding: 0 !important;
   }
 
   body.login #content {
@@ -47,199 +58,458 @@
     margin: 0 !important;
   }
 
-  /* Luxury White & Gold Login Card */
-  .login-card {
-    background: #ffffff !important;
-    border: 1.5px solid #e6cb7a !important;
-    border-radius: 16px !important;
-    box-shadow: 0 12px 35px -5px rgba(197, 155, 39, 0.15), 0 4px 15px rgba(0, 0, 0, 0.05) !important;
-    padding: 36px 32px !important;
+  /* Master Split Card */
+  .split-login-card {
+    display: flex;
+    background: #ffffff;
+    border-radius: 24px;
+    border: 1.5px solid #eed695;
+    box-shadow: 0 20px 60px -10px rgba(197, 155, 39, 0.18), 0 4px 16px rgba(0, 0, 0, 0.04);
+    min-height: 580px;
     position: relative;
     overflow: hidden;
   }
 
-  /* Top Gold Decorative Bar */
-  .login-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #c59b27 0%, #e6cb7a 50%, #c59b27 100%);
-  }
-
-  /* Logo & Branding Area */
-  .login-header {
+  /* ============================================
+     LEFT PANEL: Rich Gold with Touch of Black
+     ============================================ */
+  .brand-panel {
+    flex: 0 0 44%;
+    position: relative;
+    background: linear-gradient(160deg, #a47814 0%, #c59b27 35%, #d8ac32 65%, #0a0e17 100%);
+    color: #ffffff;
+    padding: 50px 44px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     text-align: center;
-    margin-bottom: 28px;
+    z-index: 2;
   }
 
-  .login-logo {
-    width: 80px;
-    height: 80px;
+  .brand-logo-img {
+    width: 110px;
+    height: 110px;
     object-fit: cover;
     border-radius: 50%;
-    margin: 0 auto 14px auto;
+    margin: 0 auto 18px auto;
     display: block;
-    border: 2px solid #c59b27;
-    box-shadow: 0 4px 14px rgba(197, 155, 39, 0.25);
+    border: 3.5px solid #ffffff;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
     background: #090d16;
   }
 
-  .login-title {
-    margin: 0 0 6px 0;
-    color: #0f172a !important;
-    font-size: 1.35rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-  }
-
-  .login-subtitle {
-    margin: 0;
-    color: #854d0e !important;
-    font-size: 0.85rem;
-    font-weight: 600;
-    letter-spacing: 0.04em;
+  .brand-title-large {
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    margin: 0 0 4px 0;
     text-transform: uppercase;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   }
 
-  /* Form Fields & Labels - 100% Visible & High Contrast */
-  .form-row {
-    margin-bottom: 20px;
-    padding: 0 !important;
-    border: none !important;
+  .brand-subtitle-mini {
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #ffffff;
+    margin: 0 0 20px 0;
+    opacity: 0.95;
   }
 
-  .form-row label {
+  .brand-description {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    color: #ffffff;
+    margin: 0 auto 28px auto;
+    max-width: 300px;
+  }
+
+  .brand-footer {
+    font-size: 0.76rem;
+    color: #ffffff;
+    margin: 0;
+    letter-spacing: 0.02em;
+    opacity: 0.85;
+  }
+
+  /* Scalloped Wavy Edge SVG Divider */
+  .scallop-divider-wrap {
+    position: absolute;
+    right: -36px;
+    top: 0;
+    bottom: 0;
+    width: 40px;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* ============================================
+     RIGHT PANEL: Crisp Pure White & Gold Form
+     ============================================ */
+  .form-panel {
+    flex: 1;
+    background: #ffffff;
+    padding: 56px 56px 46px 64px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Bottom Right Abstract Gold Watermark */
+  .watermark-ribbon {
+    position: absolute;
+    right: -20px;
+    bottom: -20px;
+    width: 240px;
+    height: 240px;
+    opacity: 0.12;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .form-header {
+    margin-bottom: 28px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .form-title {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #c59b27;
+    margin: 0 0 8px 0;
+    letter-spacing: -0.02em;
+  }
+
+  .form-subtitle {
+    font-size: 0.95rem;
+    color: #453412;
+    margin: 0;
+    font-weight: 500;
+  }
+
+  /* Input Form Groups - ZERO GRAY */
+  .form-group {
+    margin-bottom: 22px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .form-group label {
     display: block !important;
-    color: #0f172a !important;
-    font-size: 0.88rem !important;
-    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    color: #000000 !important;
     margin-bottom: 8px !important;
-    text-align: left !important;
   }
 
-  .form-row input[type="text"],
-  .form-row input[type="password"] {
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  /* PURE WHITE INSIDE, ROUNDED CORNERS, CRISP GOLD BORDER */
+  body.login input[type="text"],
+  body.login input[type="password"],
+  .form-group input[type="text"],
+  .form-group input[type="password"] {
     width: 100% !important;
-    box-sizing: border-box !important;
     background: #ffffff !important;
-    color: #0f172a !important;
-    border: 1.5px solid #cbd5e1 !important;
-    border-radius: 8px !important;
-    padding: 12px 14px !important;
-    font-size: 0.92rem !important;
-    transition: all 0.2s ease;
+    background-color: #ffffff !important;
+    border: 1.5px solid #c59b27 !important; /* Pure gold border */
+    border-radius: 12px !important;         /* Smooth rounded corners */
+    padding: 13px 48px 13px 16px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
   }
 
-  .form-row input[type="text"]:focus,
-  .form-row input[type="password"]:focus {
-    border-color: #c59b27 !important;
-    box-shadow: 0 0 0 3px rgba(197, 155, 39, 0.2) !important;
+  body.login input[type="text"]:focus,
+  body.login input[type="password"]:focus,
+  .form-group input[type="text"]:focus,
+  .form-group input[type="password"]:focus {
+    border-color: #9e7a17 !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 4px rgba(197, 155, 39, 0.2) !important;
     outline: none !important;
   }
 
-  /* Submit Button: Solid Gold Gradient */
-  .submit-row {
-    margin-top: 26px !important;
-    padding: 0 !important;
-    background: transparent !important;
-    border: none !important;
+  /* Force white background against browser autofill (Defeats Chrome autofill gray) */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  input:-internal-autofill-selected {
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+    box-shadow: 0 0 0 1000px #ffffff inset !important;
+    -webkit-text-fill-color: #000000 !important;
+    color: #000000 !important;
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    transition: background-color 5000s ease-in-out 0s;
   }
 
-  .submit-row input[type="submit"] {
-    width: 100% !important;
-    background: linear-gradient(135deg, #b8860b 0%, #c59b27 50%, #d4af37 100%) !important;
+  /* Gold Eye Toggle Button (No Gray) */
+  .password-toggle-btn {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #c59b27;
+    background: none;
+    border: none;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+    z-index: 5;
+  }
+
+  .password-toggle-btn:hover {
+    color: #9e7a17;
+  }
+
+  /* Remember Me Checkbox */
+  .remember-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 26px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .remember-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #c59b27;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .remember-row label {
+    font-size: 0.9rem;
+    color: #000000;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* Action Button: Rounded Pill Gold Button */
+  .submit-group {
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .submit-group input[type="submit"] {
+    width: 155px !important;
+    background: linear-gradient(135deg, #c59b27 0%, #e0b84c 100%) !important;
     color: #ffffff !important;
     font-weight: 700 !important;
-    font-size: 0.95rem !important;
-    letter-spacing: 0.03em !important;
-    padding: 12px !important;
+    font-size: 1.05rem !important;
+    padding: 13px 28px !important;
     border: none !important;
-    border-radius: 8px !important;
+    border-radius: 28px !important;
     cursor: pointer !important;
-    box-shadow: 0 4px 14px rgba(197, 155, 39, 0.3) !important;
+    box-shadow: 0 6px 18px rgba(197, 155, 39, 0.35) !important;
     transition: all 0.2s ease !important;
   }
 
-  .submit-row input[type="submit"]:hover {
-    background: linear-gradient(135deg, #9e7a17 0%, #b8860b 100%) !important;
+  .submit-group input[type="submit"]:hover {
+    background: linear-gradient(135deg, #b8860b 0%, #c59b27 100%) !important;
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(197, 155, 39, 0.4) !important;
+    box-shadow: 0 8px 24px rgba(197, 155, 39, 0.45) !important;
   }
 
-  /* Error notice styling */
+  /* Disclaimer text (Gold tone, zero gray) */
+  .login-disclaimer {
+    font-size: 0.82rem;
+    font-style: italic;
+    color: #854d0e;
+    margin: 14px 0 0 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  .return-link-wrap {
+    margin-top: 18px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .return-link-wrap a {
+    color: #c59b27;
+    text-decoration: none;
+    font-size: 0.86rem;
+    font-weight: 700;
+  }
+
+  .return-link-wrap a:hover {
+    text-decoration: underline;
+  }
+
+  /* Error Alert */
   .errornote {
     background: #fef2f2 !important;
     color: #991b1b !important;
-    border: 1px solid #fecaca !important;
-    border-radius: 8px !important;
+    border: 1.5px solid #fecaca !important;
+    border-radius: 10px !important;
     padding: 10px 14px !important;
     font-size: 0.86rem !important;
     margin-bottom: 20px !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
+    position: relative;
+    z-index: 2;
   }
 
-  .login-footer {
-    text-align: center;
-    margin-top: 20px;
-    font-size: 0.82rem;
-    color: #64748b;
-  }
-
-  .login-footer a {
-    color: #c59b27 !important;
-    text-decoration: none;
-    font-weight: 600;
-  }
-
-  .login-footer a:hover {
-    text-decoration: underline;
+  /* Responsive layout */
+  @media (max-width: 768px) {
+    .split-login-card {
+      flex-direction: column;
+    }
+    .brand-panel {
+      padding: 40px 24px;
+    }
+    .scallop-divider-wrap {
+      display: none;
+    }
+    .form-panel {
+      padding: 36px 24px;
+    }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="login-card">
-  <div class="login-header">
-    <img src="{% static 'images/swissmax-logo.jpg' %}" alt="SwissMax Beauty Logo" class="login-logo">
-    <h1 class="login-title">SwissMax Admin</h1>
-    <p class="login-subtitle">Luxury Commerce Management</p>
+<div class="split-login-card">
+  <!-- LEFT SIDE: Brand Panel (Welcome To removed, clean luxury presentation) -->
+  <div class="brand-panel">
+    <img src="{% static 'images/swissmax-logo.jpg' %}" alt="SwissMax Beauty Logo" class="brand-logo-img">
+    <h1 class="brand-title-large">SWISSMAX</h1>
+    <p class="brand-subtitle-mini">BEAUTY GRP LIMITED</p>
+    <p class="brand-description">
+      Artisanal Swiss cosmetic formulations, botanical skincare & haute parfumerie.
+    </p>
+
+    <p class="brand-footer">
+      ✦ Developed for SwissMax Beauty GRP Limited
+    </p>
+
+    <!-- Scalloped Cloud Divider SVG -->
+    <div class="scallop-divider-wrap">
+      <svg viewBox="0 0 36 600" preserveAspectRatio="none" style="height: 100%; width: 36px; display: block;">
+        <path d="M 0,0 C 24,35 24,65 0,100 C 26,135 26,165 0,200 C 28,235 28,265 0,300 C 26,335 26,365 0,400 C 28,435 28,465 0,500 C 24,535 24,565 0,600 L 0,600 L 0,0 Z" fill="rgba(212, 175, 55, 0.2)" transform="translate(6, 0)"/>
+        <path d="M 0,0 C 20,35 20,65 0,100 C 22,135 22,165 0,200 C 24,235 24,265 0,300 C 22,335 22,365 0,400 C 24,435 24,465 0,500 C 20,535 20,565 0,600 L 0,600 L 0,0 Z" fill="rgba(242, 222, 160, 0.45)" transform="translate(3, 0)"/>
+        <path d="M 0,0 C 16,35 16,65 0,100 C 18,135 18,165 0,200 C 20,235 20,265 0,300 C 18,335 18,365 0,400 C 20,435 20,465 0,500 C 16,535 16,565 0,600 L 0,600 L 0,0 Z" fill="url(#panel-gold-gradient)"/>
+        <defs>
+          <linearGradient id="panel-gold-gradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#a47814"/>
+            <stop offset="35%" stop-color="#c59b27"/>
+            <stop offset="65%" stop-color="#d8ac32"/>
+            <stop offset="100%" stop-color="#0a0e17"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
   </div>
 
-  {% if form.errors and not form.non_field_errors %}
-    <p class="errornote">
-      {% if form.errors.items|length == 1 %}{% translate "Please correct the error below." %}{% else %}{% translate "Please correct the errors below." %}{% endif %}
+  <!-- RIGHT SIDE: Clean Pure White & Gold Login Form -->
+  <div class="form-panel">
+    <!-- Abstract Watermark in Bottom Right -->
+    <svg class="watermark-ribbon" viewBox="0 0 200 200" fill="none">
+      <circle cx="100" cy="100" r="80" stroke="#c59b27" stroke-width="8" stroke-dasharray="10 15"/>
+      <circle cx="100" cy="100" r="50" stroke="#c59b27" stroke-width="4"/>
+      <path d="M 40,160 Q 100,60 160,160" stroke="#c59b27" stroke-width="10" stroke-linecap="round"/>
+    </svg>
+
+    <div class="form-header">
+      <h1 class="form-title">Log in</h1>
+      <p class="form-subtitle">Please fill in your credentials to login.</p>
+    </div>
+
+    {% if form.errors and not form.non_field_errors %}
+      <p class="errornote">
+        {% if form.errors.items|length == 1 %}{% translate "Please correct the error below." %}{% else %}{% translate "Please correct the errors below." %}{% endif %}
+      </p>
+    {% endif %}
+
+    {% if form.non_field_errors %}
+      {% for error in form.non_field_errors %}
+        <p class="errornote">{{ error }}</p>
+      {% endfor %}
+    {% endif %}
+
+    <form action="{{ app_path }}" method="post" id="login-form">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="id_username">Username</label>
+        <div class="input-wrapper">
+          <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" placeholder="Enter username">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="id_password">Password</label>
+        <div class="input-wrapper">
+          <input type="password" name="password" autocomplete="current-password" required id="id_password" placeholder="Enter password">
+          <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility()" title="Toggle password visibility">
+            <svg id="eye-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+      </div>
+
+      <div class="remember-row">
+        <input type="checkbox" id="remember_me" name="remember_me">
+        <label for="remember_me">Remember Me</label>
+      </div>
+
+      <div class="submit-group">
+        <input type="submit" value="Log in">
+      </div>
+    </form>
+
+    <p class="login-disclaimer">
+      *Do not share your login credentials with anyone.
     </p>
-  {% endif %}
 
-  {% if form.non_field_errors %}
-    {% for error in form.non_field_errors %}
-      <p class="errornote">{{ error }}</p>
-    {% endfor %}
-  {% endif %}
-
-  <form action="{{ app_path }}" method="post" id="login-form">
-    {% csrf_token %}
-    <div class="form-row">
-      <label for="id_username">Username</label>
-      <input type="text" name="username" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" placeholder="Enter your username">
+    <div class="return-link-wrap">
+      <a href="https://swissmax.netlify.app/">← Return to SwissMax Storefront</a>
     </div>
-
-    <div class="form-row">
-      <label for="id_password">Password</label>
-      <input type="password" name="password" autocomplete="current-password" required id="id_password" placeholder="Enter your password">
-      <input type="hidden" name="next" value="{{ next }}">
-    </div>
-
-    <div class="submit-row">
-      <input type="submit" value="Log In">
-    </div>
-  </form>
-
-  <div class="login-footer">
-    <a href="https://swissmax.netlify.app/">← Return to SwissMax Storefront</a>
   </div>
 </div>
+
+<script>
+  function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('id_password');
+    const eyeIcon = document.getElementById('eye-icon');
+    if (passwordInput.type === 'password') {
+      passwordInput.type = 'text';
+      eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+    } else {
+      passwordInput.type = 'password';
+      eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+    }
+  }
+</script>
 {% endblock %}
