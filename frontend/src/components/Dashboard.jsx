@@ -1,7 +1,24 @@
-import React, { useState } from 'react';
-import { Upload, Image as ImageIcon, Save, CheckCircle2, ArrowLeft, RefreshCw, Plus, Trash2, Edit2, Sparkles } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Upload, Image as ImageIcon, Save, CheckCircle2, ArrowLeft, RefreshCw, Plus, Trash2, Edit2, Sparkles, X, Check, Loader2 } from 'lucide-react';
 import { uploadMediaFile } from '../services/api';
 import { INITIAL_SLIDES } from '../data/initialData';
+
+// Inject image-flash keyframe once
+const _style = document.createElement('style');
+_style.textContent = `
+  @keyframes imgFlash {
+    0%   { opacity: 0; transform: scale(0.88); filter: brightness(1.6); }
+    60%  { opacity: 1; transform: scale(1.04); filter: brightness(1.1); }
+    100% { transform: scale(1);  filter: brightness(1); }
+  }
+  .img-just-changed { animation: imgFlash 0.55s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinning { animation: spin 0.8s linear infinite; }
+`;
+if (!document.head.querySelector('#dash-anim-style')) {
+  _style.id = 'dash-anim-style';
+  document.head.appendChild(_style);
+}
 
 export default function Dashboard({
   banner,
@@ -37,6 +54,14 @@ export default function Dashboard({
   const [savingNotice, setSavingNotice] = useState('');
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
+  // Inline product editor state
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  // Track which product image just changed (for flash animation)
+  const [changedImageId, setChangedImageId] = useState(null);
+  // Track which product image is currently uploading
+  const [uploadingImageId, setUploadingImageId] = useState(null);
 
   // New Product Form State
   const [newProduct, setNewProduct] = useState({
@@ -132,11 +157,16 @@ export default function Dashboard({
     }
   };
 
-  // Handle Product Image change
+  // Handle Product Image change — with upload spinner + flash animation on complete
   const handleProductImageUpload = async (prodId, file) => {
     if (file) {
+      setUploadingImageId(prodId);
       const uploadedUrl = await uploadMediaFile(file);
-      onUpdateProduct(prodId, { image: uploadedUrl });
+      setUploadingImageId(null);
+      await onUpdateProduct(prodId, { image: uploadedUrl });
+      // Trigger flash animation
+      setChangedImageId(prodId);
+      setTimeout(() => setChangedImageId(null), 700);
     }
   };
 
@@ -628,113 +658,215 @@ export default function Dashboard({
               </button>
             </div>
 
-            {/* Product Items Table / Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
-              {products.map((prod) => (
-                <div
-                  key={prod.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '20px',
-                    padding: '16px',
-                    border: '1px solid var(--border-light)',
-                    background: '#FAFAFA',
-                    borderRadius: '2px',
-                    flexWrap: 'wrap'
-                  }}
-                >
-                  <img
-                    src={prod.image}
-                    alt={prod.name}
-                    style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '2px', background: '#EEE' }}
-                  />
+            {/* Product Items — Inline Editable Rows */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+              {products.map((prod) => {
+                const isEditing = editingProductId === prod.id;
+                const isUploading = uploadingImageId === prod.id;
+                const imgFlash = changedImageId === prod.id;
 
-                  <div style={{ flexGrow: 1, minWidth: '220px' }}>
-                    <span style={{ fontSize: '10px', color: 'var(--color-gold)', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                      {prod.category_name}
-                    </span>
-                    <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '16px', fontWeight: '600' }}>
-                      {prod.name}
-                    </h4>
-                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '480px', marginTop: '2px' }}>
-                      {prod.description}
-                    </p>
-                  </div>
+                return (
+                  <div
+                    key={prod.id}
+                    style={{
+                      border: isEditing ? '1.5px solid var(--color-gold)' : '1px solid var(--border-light)',
+                      background: isEditing ? '#FEFCF7' : '#FAFAFA',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                      transition: 'border-color 0.2s, background 0.2s',
+                    }}
+                  >
+                    {/* — Main Row — */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 16px', flexWrap: 'wrap' }}>
 
-                  <div style={{ minWidth: '100px', fontSize: '15px', fontWeight: '700' }}>
-                    ${prod.price}.00
-                  </div>
+                      {/* Thumbnail with upload overlay */}
+                      <div style={{ position: 'relative', width: '72px', height: '72px', flexShrink: 0 }}>
+                        <img
+                          src={prod.image}
+                          alt={prod.name}
+                          className={imgFlash ? 'img-just-changed' : ''}
+                          style={{
+                            width: '72px', height: '72px',
+                            objectFit: 'cover', borderRadius: '3px',
+                            background: '#EEE', display: 'block',
+                            opacity: isUploading ? 0.35 : 1,
+                            transition: 'opacity 0.2s',
+                          }}
+                        />
+                        {isUploading && (
+                          <div style={{
+                            position: 'absolute', inset: 0,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            background: 'rgba(255,255,255,0.7)', borderRadius: '3px'
+                          }}>
+                            <Loader2 size={22} className="spinning" color="var(--color-gold)" />
+                          </div>
+                        )}
+                        {/* Hover-to-replace overlay */}
+                        <label style={{
+                          position: 'absolute', inset: 0,
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          background: 'rgba(11,12,14,0.55)', borderRadius: '3px',
+                          opacity: 0, cursor: 'pointer', gap: '3px',
+                          transition: 'opacity 0.2s',
+                        }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                          onMouseLeave={e => e.currentTarget.style.opacity = 0}
+                        >
+                          <Upload size={15} color="var(--color-gold)" />
+                          <span style={{ fontSize: '9px', color: '#fff', fontWeight: '700', letterSpacing: '0.06em' }}>REPLACE</span>
+                          <input
+                            type="file" accept="image/*" style={{ display: 'none' }}
+                            onChange={(e) => handleProductImageUpload(prod.id, e.target.files[0])}
+                          />
+                        </label>
+                      </div>
 
-                  {/* Change Image + Edit Price + Delete Actions */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <label
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px 14px',
+                      {/* Info */}
+                      <div style={{ flexGrow: 1, minWidth: '200px' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--color-gold)', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                          {prod.category_name}
+                        </span>
+                        <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', fontWeight: '600', margin: '2px 0' }}>
+                          {prod.name}
+                        </h4>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '420px' }}>
+                          {prod.description?.slice(0, 90)}{prod.description?.length > 90 ? '…' : ''}
+                        </p>
+                      </div>
+
+                      {/* Price badge */}
+                      <div style={{ minWidth: '90px', fontSize: '15px', fontWeight: '800', color: '#0B0C0E' }}>
+                        ${prod.price}.00
+                      </div>
+
+                      {/* Action buttons */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                        <button
+                          onClick={() => {
+                            if (isEditing) {
+                              setEditingProductId(null);
+                            } else {
+                              setEditingProductId(prod.id);
+                              setEditForm({
+                                name: prod.name,
+                                price: prod.price,
+                                description: prod.description || '',
+                                category_slug: prod.category_slug || '',
+                              });
+                            }
+                          }}
+                          style={{
+                            padding: '7px 14px',
+                            background: isEditing ? '#0B0C0E' : '#FFF',
+                            border: isEditing ? '1.5px solid var(--color-gold)' : '1px solid var(--border-light)',
+                            color: isEditing ? 'var(--color-gold)' : '#333',
+                            fontSize: '11px', fontWeight: '700', cursor: 'pointer',
+                            borderRadius: '3px', display: 'flex', alignItems: 'center', gap: '5px',
+                            transition: 'all 0.18s',
+                          }}
+                        >
+                          {isEditing ? <X size={12} /> : <Edit2 size={12} />}
+                          {isEditing ? 'CLOSE' : 'EDIT'}
+                        </button>
+
+                        <button
+                          onClick={() => setConfirmDeleteId(prod.id)}
+                          style={{
+                            padding: '7px 12px',
+                            background: '#fff5f5', border: '1px solid #fca5a5',
+                            color: '#b91c1c', fontSize: '11px', fontWeight: '700',
+                            cursor: 'pointer', borderRadius: '3px',
+                            display: 'flex', alignItems: 'center', gap: '5px',
+                          }}
+                        >
+                          <Trash2 size={12} />
+                          DELETE
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* — Inline Edit Panel — slides open — */}
+                    {isEditing && (
+                      <div style={{
+                        borderTop: '1px solid var(--border-light)',
                         background: '#FFF',
-                        border: '1px solid var(--border-light)',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        borderRadius: '2px'
-                      }}
-                    >
-                      <Upload size={13} color="var(--color-gold)" />
-                      <span>Change Photo</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={(e) => handleProductImageUpload(prod.id, e.target.files[0])}
-                      />
-                    </label>
+                        padding: '20px 20px 24px',
+                      }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.8fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                          {/* Name */}
+                          <div>
+                            <label style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '5px' }}>Product Name</label>
+                            <input
+                              type="text"
+                              className="form-input"
+                              value={editForm.name}
+                              onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+                            />
+                          </div>
+                          {/* Price */}
+                          <div>
+                            <label style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '5px' }}>Price ($)</label>
+                            <input
+                              type="number"
+                              className="form-input"
+                              value={editForm.price}
+                              onChange={e => setEditForm({ ...editForm, price: Number(e.target.value) })}
+                            />
+                          </div>
+                          {/* Category */}
+                          <div>
+                            <label style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '5px' }}>Category</label>
+                            <select
+                              className="form-select"
+                              value={editForm.category_slug}
+                              onChange={e => setEditForm({ ...editForm, category_slug: e.target.value })}
+                            >
+                              {categories.map(c => (
+                                <option key={c.slug} value={c.slug}>{c.name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
 
-                    <button
-                      onClick={() => {
-                        const newPrice = prompt(`Enter new price for ${prod.name}:`, prod.price);
-                        if (newPrice !== null && !isNaN(Number(newPrice))) {
-                          onUpdateProduct(prod.id, { price: Number(newPrice) });
-                        }
-                      }}
-                      style={{
-                        padding: '8px 12px',
-                        background: '#FFF',
-                        border: '1px solid var(--border-light)',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        borderRadius: '2px'
-                      }}
-                    >
-                      Edit Price
-                    </button>
+                        {/* Description */}
+                        <div style={{ marginBottom: '18px' }}>
+                          <label style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '5px' }}>Description</label>
+                          <textarea
+                            rows={2}
+                            className="form-textarea"
+                            value={editForm.description}
+                            onChange={e => setEditForm({ ...editForm, description: e.target.value })}
+                          />
+                        </div>
 
-                    <button
-                      onClick={() => setConfirmDeleteId(prod.id)}
-                      style={{
-                        padding: '8px 12px',
-                        background: '#fff5f5',
-                        border: '1px solid #fca5a5',
-                        color: '#b91c1c',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        borderRadius: '2px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px'
-                      }}
-                      title="Delete product"
-                    >
-                      <Trash2 size={13} />
-                      Delete
-                    </button>
+                        {/* Save / Cancel */}
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                          <button
+                            onClick={() => setEditingProductId(null)}
+                            style={{ padding: '9px 18px', border: '1px solid var(--border-light)', background: '#FFF', fontSize: '11px', fontWeight: '700', cursor: 'pointer', borderRadius: '3px' }}
+                          >
+                            CANCEL
+                          </button>
+                          <button
+                            onClick={async () => {
+                              await onUpdateProduct(prod.id, editForm);
+                              setSavingNotice(`✓ "${editForm.name}" updated.`);
+                              setTimeout(() => setSavingNotice(''), 3000);
+                              setEditingProductId(null);
+                            }}
+                            className="btn-save"
+                            style={{ padding: '9px 20px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            <Check size={14} />
+                            SAVE CHANGES
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
