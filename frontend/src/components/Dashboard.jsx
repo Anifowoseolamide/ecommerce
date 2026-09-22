@@ -11,6 +11,7 @@ export default function Dashboard({
   products,
   onUpdateProduct,
   onAddProduct,
+  onDeleteProduct,
   onBackToStore,
   onLogoutAdmin
 }) {
@@ -35,6 +36,7 @@ export default function Dashboard({
 
   const [savingNotice, setSavingNotice] = useState('');
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   // New Product Form State
   const [newProduct, setNewProduct] = useState({
@@ -664,7 +666,7 @@ export default function Dashboard({
                     ${prod.price}.00
                   </div>
 
-                  {/* Change Image Action */}
+                  {/* Change Image + Edit Price + Delete Actions */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <label
                       style={{
@@ -709,12 +711,73 @@ export default function Dashboard({
                     >
                       Edit Price
                     </button>
+
+                    <button
+                      onClick={() => setConfirmDeleteId(prod.id)}
+                      style={{
+                        padding: '8px 12px',
+                        background: '#fff5f5',
+                        border: '1px solid #fca5a5',
+                        color: '#b91c1c',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        borderRadius: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }}
+                      title="Delete product"
+                    >
+                      <Trash2 size={13} />
+                      Delete
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         )}
+
+        {/* MODAL: CONFIRM DELETE PRODUCT */}
+        {confirmDeleteId && (() => {
+          const prod = products.find(p => p.id === confirmDeleteId);
+          return (
+            <div className="modal-backdrop" onClick={() => setConfirmDeleteId(null)}>
+              <div
+                style={{ background: '#FFF', maxWidth: '420px', width: '100%', padding: '32px', borderRadius: '2px', textAlign: 'center' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div style={{ fontSize: '36px', marginBottom: '12px' }}>🗑️</div>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '17px', letterSpacing: '0.06em', marginBottom: '10px' }}>
+                  DELETE PRODUCT?
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: '1.6' }}>
+                  Are you sure you want to permanently delete <strong>{prod?.name}</strong>? This cannot be undone.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                  <button
+                    onClick={() => setConfirmDeleteId(null)}
+                    style={{ padding: '10px 22px', border: '1px solid var(--border-light)', background: '#FFF', fontSize: '11px', fontWeight: '700', cursor: 'pointer', borderRadius: '2px', letterSpacing: '0.06em' }}
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setConfirmDeleteId(null);
+                      await onDeleteProduct(confirmDeleteId);
+                      setSavingNotice(`✓ Product "${prod?.name}" deleted from catalog.`);
+                      setTimeout(() => setSavingNotice(''), 3500);
+                    }}
+                    style={{ padding: '10px 22px', background: '#b91c1c', border: 'none', color: '#FFF', fontSize: '11px', fontWeight: '700', cursor: 'pointer', borderRadius: '2px', letterSpacing: '0.06em' }}
+                  >
+                    YES, DELETE
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* MODAL: ADD NEW PRODUCT */}
         {showAddProductModal && (

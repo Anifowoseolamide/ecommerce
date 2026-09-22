@@ -132,6 +132,11 @@ else:
         }
     }
 
+# Supabase Storage (for uploaded product/category/banner images)
+SUPABASE_URL = os.getenv('SUPABASE_URL', '')
+SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY', '')
+SUPABASE_STORAGE_BUCKET = os.getenv('SUPABASE_STORAGE_BUCKET', 'ecommerce-media')
+
 
 
 # Password validation

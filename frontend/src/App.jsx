@@ -21,7 +21,9 @@ import {
   fetchProductsData,
   saveProductsData,
   createProductOnBackend,
-  updateProductOnBackend
+  updateProductOnBackend,
+  updateCategoryOnBackend,
+  deleteProductOnBackend
 } from './services/api';
 
 import { INITIAL_BANNER, INITIAL_CATEGORIES, INITIAL_PRODUCTS } from './data/initialData';
@@ -147,13 +149,31 @@ export default function App() {
   const handleUpdateCategory = async (catSlug, updates) => {
     const updated = categories.map(c => c.slug === catSlug ? { ...c, ...updates } : c);
     setCategories(updated);
+
+    // Also persist to backend using the category's uuid id
+    const cat = updated.find(c => c.slug === catSlug);
+    if (cat && cat.id) {
+      await updateCategoryOnBackend(cat.id, cat.name, updates.imageFile || null);
+    }
+
     await saveCategoriesData(updated);
   };
 
   const handleUpdateProduct = async (productId, updates) => {
-    // Sync with backend API
-    await updateProductOnBackend(productId, updates);
-    const updated = products.map(p => p.id === productId ? { ...p, ...updates } : p);
+    // Sync with backend API and use the returned product data if available
+    const backendProduct = await updateProductOnBackend(productId, updates);
+    const mergedUpdates = backendProduct
+      ? {
+          name: backendProduct.name,
+          price: backendProduct.price,
+          description: backendProduct.description,
+          category_name: backendProduct.category_name,
+          category_slug: backendProduct.category_slug,
+          image: backendProduct.image || updates.image,
+        }
+      : updates;
+
+    const updated = products.map(p => p.id === productId ? { ...p, ...mergedUpdates } : p);
     setProducts(updated);
     await saveProductsData(updated);
   };
@@ -175,6 +195,13 @@ export default function App() {
 
     const updated = [productToAdd, ...products];
     setProducts(updated);
+    await saveProductsData(updated);
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    const updated = products.filter(p => p.id !== productId);
+    setProducts(updated);
+    await deleteProductOnBackend(productId);
     await saveProductsData(updated);
   };
 
@@ -210,6 +237,7 @@ export default function App() {
           products={products}
           onUpdateProduct={handleUpdateProduct}
           onAddProduct={handleAddProduct}
+          onDeleteProduct={handleDeleteProduct}
           onBackToStore={() => setCurrentView('store')}
           onLogoutAdmin={handleLogoutAdmin}
         />

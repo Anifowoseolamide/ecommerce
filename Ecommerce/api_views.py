@@ -8,6 +8,7 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from products.models import Product, Category, ProductImage
 from home.models import HeroBanner
+from Ecommerce.supabase_storage import upload_to_supabase
 
 
 def banner_to_dict(banner):
@@ -95,13 +96,25 @@ def update_banner(request):
     if not banner:
         banner = HeroBanner.objects.create()
 
-    # Check for multipart files
+    # Handle banner image uploads — try Supabase first, fall back to local storage
     if 'left_image_file' in request.FILES:
-        banner.left_banner_image = request.FILES['left_image_file']
-        banner.left_banner_url = ""
+        f = request.FILES['left_image_file']
+        supabase_url = upload_to_supabase(f, f.name, folder='banners')
+        if supabase_url:
+            banner.left_banner_url = supabase_url
+            banner.left_banner_image = None
+        else:
+            banner.left_banner_image = f
+        banner.left_banner_url = supabase_url or ""
     if 'right_image_file' in request.FILES:
-        banner.right_banner_image = request.FILES['right_image_file']
-        banner.right_banner_url = ""
+        f = request.FILES['right_image_file']
+        supabase_url = upload_to_supabase(f, f.name, folder='banners')
+        if supabase_url:
+            banner.right_banner_url = supabase_url
+            banner.right_banner_image = None
+        else:
+            banner.right_banner_image = f
+        banner.right_banner_url = supabase_url or ""
 
     # Parse POST data (either from FormData or JSON)
     if request.content_type and 'application/json' in request.content_type:
@@ -181,7 +194,12 @@ def update_category(request, category_id):
         return JsonResponse({'error': 'Category not found'}, status=404)
 
     if 'image' in request.FILES:
-        category.category_image = request.FILES['image']
+        f = request.FILES['image']
+        supabase_url = upload_to_supabase(f, f.name, folder='categories')
+        if supabase_url:
+            category.category_image = supabase_url
+        else:
+            category.category_image = f
     if 'category_name' in request.POST:
         category.category_name = request.POST['category_name']
     category.save()
@@ -276,7 +294,12 @@ def create_product(request):
     )
 
     if image_file:
-        ProductImage.objects.create(product=product, image=image_file)
+        f = image_file
+        supabase_url = upload_to_supabase(f, f.name, folder='products')
+        if supabase_url:
+            ProductImage.objects.create(product=product, image=supabase_url)
+        else:
+            ProductImage.objects.create(product=product, image=f)
     elif image_url:
         # Note: image_url can be tracked
         pass
@@ -324,13 +347,25 @@ def update_product(request, product_id):
     product.save()
 
     if 'image' in request.FILES:
-        # Replace or add first image
+        # Replace or add first image via file upload — try Supabase first
+        f = request.FILES['image']
+        supabase_url = upload_to_supabase(f, f.name, folder='products')
         pimg = product.product_images.first()
         if pimg:
-            pimg.image = request.FILES['image']
+            pimg.image = supabase_url or f
             pimg.save()
         else:
-            ProductImage.objects.create(product=product, image=request.FILES['image'])
+            img_val = supabase_url or f
+            ProductImage.objects.create(product=product, image=img_val)
+    elif 'image_url' in request.POST and request.POST['image_url']:
+        # Accept image URL string from the dashboard (no file upload)
+        image_url = request.POST['image_url']
+        pimg = product.product_images.first()
+        if pimg:
+            pimg.image = image_url
+            pimg.save()
+        else:
+            ProductImage.objects.create(product=product, image=image_url)
 
     first_img = product.product_images.first()
     return JsonResponse({
@@ -349,8 +384,26 @@ def update_product(request, product_id):
 
 
 @csrf_exempt
+def delete_product(request, product_id):
+    """Delete a product and all its images from the database."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    try:
+        product = Product.objects.get(uid=product_id)
+    except Product.DoesNotExist:
+        return JsonResponse({'error': 'Product not found'}, status=404)
+
+    product_name = product.product_name
+    product.product_images.all().delete()
+    product.delete()
+
+    return JsonResponse({'status': 'success', 'deleted': product_name})
+
+
+@csrf_exempt
 def upload_file(request):
-    """Upload general asset files to media/uploads/ and return public URL."""
+    """Upload general asset files to Supabase Storage (with local fallback)."""
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=405)
 
@@ -358,10 +411,16 @@ def upload_file(request):
     if not file_obj:
         return JsonResponse({'error': 'No file uploaded'}, status=400)
 
+    # Try Supabase Storage first
+    supabase_url = upload_to_supabase(file_obj, file_obj.name, folder='uploads')
+    if supabase_url:
+        return JsonResponse({'status': 'success', 'url': supabase_url})
+
+    # Fallback: save to local media storage
+    file_obj.seek(0)  # reset after potential read in upload_to_supabase
     filename = f"uploads/{uuid.uuid4()}_{file_obj.name}"
     saved_path = default_storage.save(filename, ContentFile(file_obj.read()))
     file_url = f"{settings.MEDIA_URL}{saved_path}"
-
     return JsonResponse({'status': 'success', 'url': file_url})
 
 

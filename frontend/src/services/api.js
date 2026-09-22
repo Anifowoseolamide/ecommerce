@@ -42,7 +42,11 @@ export async function saveBannerData(updatedBanner, imageFiles = {}) {
   try {
     const formData = new FormData();
     Object.keys(updatedBanner).forEach(key => {
-      formData.append(key, updatedBanner[key]);
+      const val = updatedBanner[key];
+      // FormData cannot serialize arrays or objects — stringify them
+      if (val !== null && val !== undefined) {
+        formData.append(key, typeof val === 'object' ? JSON.stringify(val) : val);
+      }
     });
     if (imageFiles.left_image_file) {
       formData.append('left_image_file', imageFiles.left_image_file);
@@ -218,10 +222,15 @@ export async function updateProductOnBackend(productId, updates, imageFile = nul
   try {
     const formData = new FormData();
     if (updates.name) formData.append('name', updates.name);
-    if (updates.price) formData.append('price', updates.price);
-    if (updates.description) formData.append('description', updates.description);
+    if (updates.price !== undefined && updates.price !== null) formData.append('price', updates.price);
+    if (updates.description !== undefined) formData.append('description', updates.description);
     if (updates.category_slug) formData.append('category', updates.category_slug);
-    if (imageFile) formData.append('image', imageFile);
+    // Support image updates: either a File object or a URL string
+    if (imageFile) {
+      formData.append('image', imageFile);
+    } else if (updates.image && typeof updates.image === 'string' && updates.image.startsWith('http')) {
+      formData.append('image_url', updates.image);
+    }
 
     const res = await fetch(`${API_BASE}/api/products/update/${productId}/`, {
       method: 'POST',
@@ -257,3 +266,17 @@ export async function updateCategoryOnBackend(categoryId, name, imageFile = null
   return null;
 }
 
+export async function deleteProductOnBackend(productId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/products/delete/${productId}/`, {
+      method: 'POST',
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.status === 'success';
+    }
+  } catch (e) {
+    console.error('Failed to delete product on backend:', e);
+  }
+  return false;
+}

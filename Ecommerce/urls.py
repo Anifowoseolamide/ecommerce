@@ -43,6 +43,7 @@ urlpatterns = [
     path("api/products/", api_views.get_products, name="api_get_products"),
     path("api/products/create/", api_views.create_product, name="api_create_product"),
     path("api/products/update/<uuid:product_id>/", api_views.update_product, name="api_update_product"),
+    path("api/products/delete/<uuid:product_id>/", api_views.delete_product, name="api_delete_product"),
     path("api/upload/", api_views.upload_file, name="api_upload_file"),
     path("api/admin/login/", api_views.api_admin_login, name="api_admin_login"),
 ]
