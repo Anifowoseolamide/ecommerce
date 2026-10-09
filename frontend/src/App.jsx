@@ -305,6 +305,7 @@ export default function App() {
 
       {/* Product Quick View Modal */}
       <ProductModal
+        key={selectedProduct?.id}
         product={selectedProduct}
         currency={currency}
         onClose={() => setSelectedProduct(null)}

@@ -4,7 +4,6 @@ import { formatCurrency } from '../data/initialData';
 
 export default function ProductModal({ product, currency = 'NGN', onClose, onAddToCart }) {
   const [qty, setQty] = useState(1);
-  const [selectedSize, setSelectedSize] = useState('Standard');
 
   if (!product) return null;
 
@@ -36,32 +35,6 @@ export default function ProductModal({ product, currency = 'NGN', onClose, onAdd
             {product.description}
           </p>
 
-          {/* Size / Format Selection */}
-          <div style={{ marginBottom: '24px' }}>
-            <span style={{ display: 'block', fontSize: '10px', fontWeight: '600', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '8px' }}>
-              Select Specification:
-            </span>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              {['Standard 50ml', 'Signature 100ml'].map((sz) => (
-                <button
-                  key={sz}
-                  onClick={() => setSelectedSize(sz)}
-                  style={{
-                    padding: '8px 14px',
-                    fontSize: '11px',
-                    fontWeight: '600',
-                    border: selectedSize === sz ? '1.5px solid var(--color-gold)' : '1px solid var(--border-light)',
-                    background: selectedSize === sz ? '#FAF6EF' : '#FFF',
-                    borderRadius: '2px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {sz}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Quantity & Add to Bag */}
           <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginBottom: '28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border-light)', borderRadius: '2px' }}>
@@ -88,7 +61,7 @@ export default function ProductModal({ product, currency = 'NGN', onClose, onAdd
                 onClose();
               }}
             >
-              ADD TO BAG • {symbol}{(product.price * rate * qty).toFixed(2)}
+              ADD TO BAG • {formatCurrency(product.price * qty, currency)}
             </button>
           </div>
 
