@@ -6,9 +6,24 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.db import transaction
 from products.models import Product, Category, ProductImage
 from home.models import HeroBanner
 from Ecommerce.supabase_storage import upload_to_supabase
+
+
+def image_field_url(field):
+    """Return a usable URL for an ImageField holding either a local file or a full URL.
+
+    `.url` mangles stored absolute URLs (e.g. Supabase) into '/media/https%3A/...',
+    so those are returned as-is.
+    """
+    if not field:
+        return ''
+    value = str(field)
+    if value.startswith('http://') or value.startswith('https://'):
+        return value
+    return field.url
 
 
 def banner_to_dict(banner):
@@ -171,7 +186,7 @@ def get_categories(request):
     categories = Category.objects.all()
     data = []
     for c in categories:
-        img_url = c.category_image.url if c.category_image else ""
+        img_url = image_field_url(c.category_image)
         data.append({
             'id': str(c.uid),
             'name': c.category_name,
@@ -210,7 +225,7 @@ def update_category(request, category_id):
             'id': str(category.uid),
             'name': category.category_name,
             'slug': category.slug,
-            'image': category.category_image.url if category.category_image else ''
+            'image': image_field_url(category.category_image)
         }
     })
 
@@ -234,15 +249,8 @@ def get_products(request):
 
     data = []
     for p in products:
-        images = []
-        for img in p.product_images.all():
-            if img.image:
-                img_str = str(img.image)
-                if img_str.startswith('http://') or img_str.startswith('https://'):
-                    images.append(img_str)
-                else:
-                    images.append(img.image.url)
-        
+        images = [image_field_url(img.image) for img in p.product_images.all() if img.image]
+
         main_img = images[0] if images else ""
         data.append({
             'id': str(p.uid),
@@ -280,30 +288,36 @@ def create_product(request):
         category = Category.objects.filter(slug=category_slug).first()
     if not category:
         category = Category.objects.first()
+    if not category:
+        # Product.category is required — without this check the insert fails with a 500
+        return JsonResponse({'error': 'No categories exist. Run "python manage.py migrate" to create the defaults.'}, status=400)
 
     try:
         price_int = int(float(price))
     except (ValueError, TypeError):
         price_int = 100
 
-    product = Product.objects.create(
-        product_name=name,
-        category=category,
-        price=price_int,
-        product_description=desc
-    )
+    # Product and its image are saved together so a failed image save doesn't leave a half-created product
+    with transaction.atomic():
+        product = Product.objects.create(
+            product_name=name,
+            category=category,
+            price=price_int,
+            product_description=desc
+        )
 
-    if image_file:
-        f = image_file
-        supabase_url = upload_to_supabase(f, f.name, folder='products')
-        if supabase_url:
-            ProductImage.objects.create(product=product, image=supabase_url)
-        else:
-            ProductImage.objects.create(product=product, image=f)
-    elif image_url:
-        # Note: image_url can be tracked
-        pass
+        if image_file:
+            f = image_file
+            supabase_url = upload_to_supabase(f, f.name, folder='products')
+            if supabase_url:
+                ProductImage.objects.create(product=product, image=supabase_url)
+            else:
+                ProductImage.objects.create(product=product, image=f)
+        elif image_url.startswith('http://') or image_url.startswith('https://'):
+            # The dashboard uploads the file first and sends back the resulting URL
+            ProductImage.objects.create(product=product, image=image_url)
 
+    first_img = product.product_images.first()
     return JsonResponse({
         'status': 'success',
         'product': {
@@ -314,7 +328,7 @@ def create_product(request):
             'description': product.product_description,
             'category_name': product.category.category_name,
             'category_slug': product.category.slug,
-            'image': product.product_images.first().image.url if product.product_images.first() else image_url
+            'image': image_field_url(first_img.image) if first_img else image_url
         }
     })
 
@@ -378,7 +392,7 @@ def update_product(request, product_id):
             'description': product.product_description,
             'category_name': product.category.category_name,
             'category_slug': product.category.slug,
-            'image': first_img.image.url if first_img and first_img.image else ''
+            'image': image_field_url(first_img.image) if first_img else ''
         }
     })
 

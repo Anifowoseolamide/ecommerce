@@ -191,31 +191,36 @@ export async function loginAdmin(username, password) {
   }
 }
 
+// Throws on failure so the caller never shows a product that wasn't actually saved
 export async function createProductOnBackend(productData, imageFile = null) {
-  try {
-    const formData = new FormData();
-    formData.append('name', productData.name);
-    formData.append('price', productData.price);
-    formData.append('description', productData.description || '');
-    formData.append('category', productData.category_slug || '');
-    if (imageFile) {
-      formData.append('image', imageFile);
-    } else if (productData.image) {
-      formData.append('image_url', productData.image);
-    }
+  const formData = new FormData();
+  formData.append('name', productData.name);
+  formData.append('price', productData.price);
+  formData.append('description', productData.description || '');
+  formData.append('category', productData.category_slug || '');
+  if (imageFile) {
+    formData.append('image', imageFile);
+  } else if (productData.image) {
+    formData.append('image_url', productData.image);
+  }
 
-    const res = await fetch(`${API_BASE}/api/products/create/`, {
+  let res;
+  try {
+    res = await fetch(`${API_BASE}/api/products/create/`, {
       method: 'POST',
       body: formData,
     });
-    if (res.ok) {
-      const data = await res.json();
-      return data.product;
-    }
   } catch (e) {
     console.error('Failed to create product on backend:', e);
+    throw new Error('Could not reach the server. Check your connection and try again.');
   }
-  return null;
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.product) {
+    console.error('Backend rejected product create:', res.status, data);
+    throw new Error(data.error || `Server error (${res.status}). Please try again.`);
+  }
+  return data.product;
 }
 
 export async function updateProductOnBackend(productId, updates, imageFile = null) {

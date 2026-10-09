@@ -6,7 +6,8 @@ from django.utils.text import slugify
 class Category(BaseModel):
     category_name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, null=True, blank=True)
-    category_image = models.ImageField(upload_to="categories")
+    # Holds either a local file path or a full Supabase/external URL (which can exceed 100 chars)
+    category_image = models.ImageField(upload_to="categories", max_length=500)
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.category_name)
@@ -39,7 +40,14 @@ class Product(BaseModel):
     size_variant = models.ManyToManyField(SizeVariant, blank= True)
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.product_name)
+        # Slug must be unique, so suffix it when another product already has the same name
+        base_slug = slugify(self.product_name) or "product"
+        slug = base_slug
+        n = 2
+        while Product.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+            slug = f"{base_slug}-{n}"
+            n += 1
+        self.slug = slug
         super(Product, self).save(*args, **kwargs)
 
     def __str__(self) -> str:
@@ -56,6 +64,7 @@ class Product(BaseModel):
 
 class ProductImage(BaseModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="product_images")
-    image = models.ImageField(upload_to="product")
+    # Holds either a local file path or a full Supabase/external URL (which can exceed 100 chars)
+    image = models.ImageField(upload_to="product", max_length=500)
     color_variant = models.ForeignKey(ColorVariant, on_delete=models.SET_NULL, null=True, blank=True, related_name="product_images")
     

@@ -53,6 +53,7 @@ export default function Dashboard({
 
   const [savingNotice, setSavingNotice] = useState('');
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   // Inline product editor state
@@ -171,16 +172,24 @@ export default function Dashboard({
   };
 
   // Handle Add Product Submit
-  const handleCreateProductSubmit = (e) => {
+  const handleCreateProductSubmit = async (e) => {
     e.preventDefault();
-    if (!newProduct.name) return;
+    if (!newProduct.name || isCreatingProduct) return;
     const cat = categories.find(c => c.slug === newProduct.category_slug) || categories[0];
-    onAddProduct({
-      ...newProduct,
-      id: `prod-${Date.now()}`,
-      category_name: cat.name,
-      price: Number(newProduct.price)
-    });
+    setIsCreatingProduct(true);
+    try {
+      await onAddProduct({
+        ...newProduct,
+        category_name: cat.name,
+        price: Number(newProduct.price)
+      });
+    } catch (err) {
+      // Keep the modal open so the entered details aren't lost
+      alert(`Product was NOT saved: ${err.message}`);
+      return;
+    } finally {
+      setIsCreatingProduct(false);
+    }
     setShowAddProductModal(false);
     setNewProduct({
       name: '',
@@ -1006,9 +1015,10 @@ export default function Dashboard({
                   <button
                     type="submit"
                     className="btn-save"
-                    style={{ padding: '10px 20px' }}
+                    disabled={isCreatingProduct}
+                    style={{ padding: '10px 20px', opacity: isCreatingProduct ? 0.6 : 1 }}
                   >
-                    CREATE PRODUCT
+                    {isCreatingProduct ? 'SAVING…' : 'CREATE PRODUCT'}
                   </button>
                 </div>
               </form>

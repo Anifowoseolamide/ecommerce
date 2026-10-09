@@ -179,9 +179,10 @@ export default function App() {
   };
 
   const handleAddProduct = async (newProd) => {
-    // Create directly on backend Supabase PostgreSQL database
+    // Create directly on backend Supabase PostgreSQL database.
+    // Throws if the save fails — no local-only fallback, since that copy vanishes on refresh.
     const savedProd = await createProductOnBackend(newProd);
-    const productToAdd = savedProd ? {
+    const productToAdd = {
       id: savedProd.id,
       name: savedProd.name,
       slug: savedProd.slug,
@@ -191,7 +192,7 @@ export default function App() {
       category_slug: savedProd.category_slug,
       image: savedProd.image || newProd.image,
       tag: savedProd.category_name
-    } : newProd;
+    };
 
     const updated = [productToAdd, ...products];
     setProducts(updated);
