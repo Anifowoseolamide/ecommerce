@@ -88,7 +88,7 @@ export default function Footer({ onSelectCategory, onOpenAdminLogin }) {
             @2026 SWISSMAX BEAUTY GRP LIMITED. All rights reserved
           </span>
           <span style={{ color: 'var(--color-gold)', fontWeight: '600', letterSpacing: '0.08em', fontSize: '11px' }}>
-            Designed by Mr V
+            Designed by AIPS
           </span>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
             <span style={{ color: 'var(--text-light-muted)', fontSize: '11px' }}>
