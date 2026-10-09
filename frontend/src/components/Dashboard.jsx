@@ -1,7 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Image as ImageIcon, Save, CheckCircle2, ArrowLeft, RefreshCw, Plus, Trash2, Edit2, Sparkles, X, Check, Loader2 } from 'lucide-react';
 import { uploadMediaFile } from '../services/api';
-import { INITIAL_SLIDES } from '../data/initialData';
+import { INITIAL_SLIDES, CURRENCY_RATES, formatCurrency } from '../data/initialData';
+
+// Prices are stored in NGN (the storefront's base currency); USD entries are converted at the site rate
+const PRICE_CURRENCIES = ['NGN', 'USD'];
+const toNgn = (amount, currency) =>
+  Math.round(currency === 'USD' ? Number(amount) / CURRENCY_RATES.USD.rate : Number(amount));
 
 // Inject image-flash keyframe once
 const _style = document.createElement('style');
@@ -67,7 +72,8 @@ export default function Dashboard({
   // New Product Form State
   const [newProduct, setNewProduct] = useState({
     name: '',
-    price: 120,
+    price: '',
+    price_currency: 'NGN',
     category_slug: 'skincare',
     category_name: 'Skincare',
     description: '',
@@ -177,11 +183,12 @@ export default function Dashboard({
     if (!newProduct.name || isCreatingProduct) return;
     const cat = categories.find(c => c.slug === newProduct.category_slug) || categories[0];
     setIsCreatingProduct(true);
+    const { price_currency, ...productFields } = newProduct;
     try {
       await onAddProduct({
-        ...newProduct,
+        ...productFields,
         category_name: cat.name,
-        price: Number(newProduct.price)
+        price: toNgn(newProduct.price, price_currency)
       });
     } catch (err) {
       // Keep the modal open so the entered details aren't lost
@@ -193,7 +200,8 @@ export default function Dashboard({
     setShowAddProductModal(false);
     setNewProduct({
       name: '',
-      price: 120,
+      price: '',
+      price_currency: 'NGN',
       category_slug: 'skincare',
       category_name: 'Skincare',
       description: '',
@@ -746,7 +754,7 @@ export default function Dashboard({
 
                       {/* Price badge */}
                       <div style={{ minWidth: '90px', fontSize: '15px', fontWeight: '800', color: '#0B0C0E' }}>
-                        ${prod.price}.00
+                        {formatCurrency(prod.price, 'NGN')}
                       </div>
 
                       {/* Action buttons */}
@@ -760,6 +768,7 @@ export default function Dashboard({
                               setEditForm({
                                 name: prod.name,
                                 price: prod.price,
+                                price_currency: 'NGN',
                                 description: prod.description || '',
                                 category_slug: prod.category_slug || '',
                               });
@@ -802,7 +811,7 @@ export default function Dashboard({
                         background: '#FFF',
                         padding: '20px 20px 24px',
                       }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 0.8fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                           {/* Name */}
                           <div>
                             <label style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '5px' }}>Product Name</label>
@@ -815,13 +824,31 @@ export default function Dashboard({
                           </div>
                           {/* Price */}
                           <div>
-                            <label style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '5px' }}>Price ($)</label>
-                            <input
-                              type="number"
-                              className="form-input"
-                              value={editForm.price}
-                              onChange={e => setEditForm({ ...editForm, price: Number(e.target.value) })}
-                            />
+                            <label style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '5px' }}>Price</label>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                className="form-input"
+                                style={{ flex: 1, minWidth: 0 }}
+                                value={editForm.price}
+                                onChange={e => setEditForm({ ...editForm, price: e.target.value })}
+                              />
+                              <select
+                                className="form-select"
+                                style={{ width: '90px', flexShrink: 0 }}
+                                value={editForm.price_currency}
+                                onChange={e => setEditForm({ ...editForm, price_currency: e.target.value })}
+                              >
+                                {PRICE_CURRENCIES.map(c => <option key={c} value={c}>{CURRENCY_RATES[c].label}</option>)}
+                              </select>
+                            </div>
+                            {editForm.price_currency === 'USD' && editForm.price !== '' && (
+                              <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                Saved as {formatCurrency(toNgn(editForm.price, 'USD'))}
+                              </small>
+                            )}
                           </div>
                           {/* Category */}
                           <div>
@@ -859,7 +886,10 @@ export default function Dashboard({
                           </button>
                           <button
                             onClick={async () => {
-                              await onUpdateProduct(prod.id, editForm);
+                              const { price_currency, ...fields } = editForm;
+                              // A blank price leaves the stored price unchanged instead of saving ₦0
+                              const price = fields.price === '' ? undefined : toNgn(fields.price, price_currency);
+                              await onUpdateProduct(prod.id, { ...fields, price });
                               setSavingNotice(`✓ "${editForm.name}" updated.`);
                               setTimeout(() => setSavingNotice(''), 3000);
                               setEditingProductId(null);
@@ -959,14 +989,32 @@ export default function Dashboard({
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Price (USD $):</label>
-                    <input
-                      type="number"
-                      required
-                      className="form-input"
-                      value={newProduct.price}
-                      onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-                    />
+                    <label className="form-label">Price:</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input
+                        type="number"
+                        required
+                        min="0"
+                        step="any"
+                        className="form-input"
+                        style={{ flex: 1, minWidth: 0 }}
+                        value={newProduct.price}
+                        onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                      />
+                      <select
+                        className="form-select"
+                        style={{ width: '96px', flexShrink: 0 }}
+                        value={newProduct.price_currency}
+                        onChange={(e) => setNewProduct({ ...newProduct, price_currency: e.target.value })}
+                      >
+                        {PRICE_CURRENCIES.map(c => <option key={c} value={c}>{CURRENCY_RATES[c].label}</option>)}
+                      </select>
+                    </div>
+                    {newProduct.price_currency === 'USD' && newProduct.price !== '' && (
+                      <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        Saved as {formatCurrency(toNgn(newProduct.price, 'USD'))}
+                      </small>
+                    )}
                   </div>
                 </div>
 
