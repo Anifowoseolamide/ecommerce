@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from django.core.exceptions import ImproperlyConfigured
 
 try:
     from dotenv import load_dotenv
@@ -25,11 +26,18 @@ TEMPLATE_DIR = os.path.join(BASE_DIR, 'templates')
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-u*y$r5_$5x4^3h31htfp=8pyt3qo5)b+k%p$8+%s$4!jbnzmi$"
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 't')
+
+# Render sets RENDER=true on every service. Production must never fall back to dev defaults.
+IS_PRODUCTION = bool(os.getenv('RENDER')) or not DEBUG
+
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('SECRET_KEY')
+if not SECRET_KEY:
+    if IS_PRODUCTION:
+        raise ImproperlyConfigured('The SECRET_KEY environment variable must be set in production.')
+    SECRET_KEY = 'django-insecure-local-development-only'
 
 ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '*').split(',') if host.strip()]
 
@@ -124,6 +132,11 @@ if DB_NAME and DB_USER and DB_HOST and DB_PASSWORD:
     # Supabase pooler (port 6543) requires disabling server-side cursors in transaction mode
     if str(DB_PORT) == "6543":
         DATABASES["default"]["DISABLE_SERVER_SIDE_CURSORS"] = True
+elif IS_PRODUCTION:
+    # SQLite on Render lives on an ephemeral disk, so every deploy/restart would silently wipe all data
+    raise ImproperlyConfigured(
+        'DB_NAME, DB_USER, DB_HOST and DB_PASSWORD environment variables must be set in production.'
+    )
 else:
     DATABASES = {
         "default": {
@@ -206,9 +219,9 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
 # Your email address and app-specific password
-EMAIL_HOST_USER = 'your.mail@gmail.com'
-EMAIL_HOST_PASSWORD = 'your-app-password' # Use an app password for services like Gmail
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')  # Use an app password for services like Gmail
 
-# Razorpay Settings
-RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID') or os.getenv('razor_pay_key_id') or 'your_razorpay_key_id'
-RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET') or os.getenv('key_secret') or 'your_razorpay_secret_key'
+# Razorpay Settings (lowercase names are the legacy keys from older .env files)
+RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID') or os.getenv('razor_pay_key_id') or ''
+RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET') or os.getenv('key_secret') or ''
