@@ -12,6 +12,7 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from products.models import Product, Category, ProductImage
 from home.models import HeroBanner
+from orders.models import CheckoutSettings, Order, OrderItem, generate_order_reference, normalize_whatsapp_number
 from Ecommerce.supabase_storage import upload_to_supabase
 
 
@@ -516,3 +517,181 @@ def api_admin_login(request):
     else:
         return JsonResponse({'success': False, 'error': 'Invalid username or password.'}, status=401)
 
+
+# --- Orders -------------------------------------------------------------------
+
+MAX_ORDER_LINES = 50
+MAX_LINE_QUANTITY = 1000
+
+
+def parse_json_body(request):
+    try:
+        return json.loads(request.body.decode('utf-8'))
+    except (ValueError, UnicodeDecodeError):
+        return None
+
+
+def order_to_dict(order):
+    return {
+        'id': str(order.uid),
+        'reference': order.reference,
+        'customer_name': order.customer_name,
+        'customer_phone': order.customer_phone,
+        'delivery_address': order.delivery_address,
+        'note': order.note,
+        'total': order.total,
+        'status': order.status,
+        'created_at': order.create_at.isoformat(),
+        'items': [
+            {
+                'product_id': str(item.product_id) if item.product_id else None,
+                'name': item.product_name,
+                'unit_price': item.unit_price,
+                'quantity': item.quantity,
+                'line_total': item.line_total,
+            }
+            for item in order.items.all()
+        ],
+    }
+
+
+def checkout_settings_to_dict(checkout_settings):
+    return {
+        'whatsapp_number': checkout_settings.whatsapp_number,
+        'bank_name': checkout_settings.bank_name,
+        'account_number': checkout_settings.account_number,
+        'account_name': checkout_settings.account_name,
+    }
+
+
+@csrf_exempt
+def create_order(request):
+    """Public: save a customer's order. Prices come from the database, never from the client."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    data = parse_json_body(request)
+    if not isinstance(data, dict):
+        return JsonResponse({'error': 'Invalid request.'}, status=400)
+
+    customer = {
+        'customer_name': str(data.get('name', '')).strip(),
+        'customer_phone': str(data.get('phone', '')).strip(),
+        'delivery_address': str(data.get('address', '')).strip(),
+        'note': str(data.get('note', '')).strip(),
+    }
+    if not (customer['customer_name'] and customer['customer_phone'] and customer['delivery_address']):
+        return JsonResponse({'error': 'Please enter your name, phone number and delivery address.'}, status=400)
+    if sum(c.isdigit() for c in customer['customer_phone']) < 7:
+        return JsonResponse({'error': 'Please enter a valid phone number.'}, status=400)
+    if (len(customer['customer_name']) > 200 or len(customer['customer_phone']) > 40
+            or len(customer['delivery_address']) > 1000 or len(customer['note']) > 2000):
+        return JsonResponse({'error': 'Some of your details are too long.'}, status=400)
+
+    raw_items = data.get('items')
+    if not isinstance(raw_items, list) or not raw_items:
+        return JsonResponse({'error': 'Your bag is empty.'}, status=400)
+    if len(raw_items) > MAX_ORDER_LINES:
+        return JsonResponse({'error': f'Orders are limited to {MAX_ORDER_LINES} different products.'}, status=400)
+
+    quantities = {}
+    for entry in raw_items:
+        if not isinstance(entry, dict):
+            return JsonResponse({'error': 'Invalid request.'}, status=400)
+        try:
+            qty = int(entry.get('quantity', 0))
+        except (TypeError, ValueError):
+            qty = 0
+        if qty < 1 or qty > MAX_LINE_QUANTITY:
+            return JsonResponse({'error': f'Quantities must be between 1 and {MAX_LINE_QUANTITY}.'}, status=400)
+        product_id = str(entry.get('product_id', ''))
+        quantities[product_id] = quantities.get(product_id, 0) + qty
+
+    # Bags saved before products came from the database can hold ids that were never real products
+    valid_ids, unavailable = [], []
+    for product_id in quantities:
+        try:
+            uuid.UUID(product_id)
+            valid_ids.append(product_id)
+        except ValueError:
+            unavailable.append(product_id)
+    products = {str(p.uid): p for p in Product.objects.filter(uid__in=valid_ids)}
+    unavailable += [product_id for product_id in valid_ids if product_id not in products]
+    if unavailable:
+        return JsonResponse({
+            'error': 'Some items in your bag are no longer available and have been removed. Please review your bag.',
+            'unavailable': unavailable,
+        }, status=400)
+
+    reference = generate_order_reference()
+    while Order.objects.filter(reference=reference).exists():
+        reference = generate_order_reference()
+
+    with transaction.atomic():
+        order = Order.objects.create(
+            reference=reference,
+            total=sum(products[pid].price * qty for pid, qty in quantities.items()),
+            **customer,
+        )
+        OrderItem.objects.bulk_create([
+            OrderItem(order=order, product=products[pid], product_name=products[pid].product_name,
+                      unit_price=products[pid].price, quantity=qty)
+            for pid, qty in quantities.items()
+        ])
+
+    return JsonResponse({
+        'status': 'success',
+        'order': order_to_dict(order),
+        'payment': checkout_settings_to_dict(CheckoutSettings.load()),
+    })
+
+
+@staff_required
+def list_orders(request):
+    """Most recent orders for the dashboard."""
+    orders = Order.objects.prefetch_related('items')[:200]
+    return JsonResponse({'status': 'success', 'orders': [order_to_dict(o) for o in orders]})
+
+
+@csrf_exempt
+@staff_required
+def update_order_status(request, order_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    data = parse_json_body(request)
+    new_status = data.get('status') if isinstance(data, dict) else None
+    if new_status not in dict(Order.STATUS_CHOICES):
+        return JsonResponse({'error': 'Invalid status.'}, status=400)
+
+    order = Order.objects.filter(uid=order_id).first()
+    if not order:
+        return JsonResponse({'error': 'Order not found'}, status=404)
+
+    order.status = new_status
+    order.save(update_fields=['status', 'updated_at'])
+    return JsonResponse({'status': 'success', 'order': order_to_dict(order)})
+
+
+@csrf_exempt
+@staff_required
+def checkout_settings(request):
+    """GET returns, POST updates the bank and WhatsApp details customers see after ordering."""
+    current = CheckoutSettings.load()
+
+    if request.method == 'POST':
+        data = parse_json_body(request)
+        if not isinstance(data, dict):
+            return JsonResponse({'error': 'Invalid request.'}, status=400)
+        number = normalize_whatsapp_number(str(data.get('whatsapp_number', '')))
+        if number and not 10 <= len(number) <= 15:
+            return JsonResponse({'error': 'Enter the WhatsApp number like 08031234567 or 2348031234567.'}, status=400)
+        current.whatsapp_number = number
+        current.bank_name = str(data.get('bank_name', '')).strip()[:100]
+        current.account_number = str(data.get('account_number', '')).strip()[:20]
+        current.account_name = str(data.get('account_name', '')).strip()[:200]
+        current.save()
+    elif request.method != 'GET':
+        return JsonResponse({'error': 'GET or POST required'}, status=405)
+
+    return JsonResponse({'status': 'success', 'settings': checkout_settings_to_dict(current)})

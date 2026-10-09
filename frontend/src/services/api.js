@@ -322,3 +322,71 @@ export async function deleteProductOnBackend(productId) {
   }
   return false;
 }
+
+// Public: place an order. Throws with the server's message; err.unavailable lists product ids no longer for sale.
+export async function placeOrder(customer, cartItems) {
+  let res;
+  try {
+    res = await fetch(`${API_BASE}/api/orders/create/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...customer,
+        items: cartItems.map(item => ({ product_id: item.id, quantity: item.quantity })),
+      }),
+    });
+  } catch (e) {
+    throw new Error('Could not reach the server. Check your connection and try again.');
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.order) {
+    const err = new Error(data.error || `Server error (${res.status}). Please try again.`);
+    err.unavailable = data.unavailable || [];
+    throw err;
+  }
+  return { order: data.order, payment: data.payment };
+}
+
+// Admin JSON request that throws with the server's message on failure
+async function adminJson(url, options = {}) {
+  let res;
+  try {
+    res = await adminFetch(url, options);
+  } catch (e) {
+    throw new Error('Could not reach the server. Check your connection and try again.');
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data.error || `Server error (${res.status}). Please try again.`);
+  }
+  return data;
+}
+
+export async function fetchOrders() {
+  const data = await adminJson(`${API_BASE}/api/orders/`);
+  return data.orders;
+}
+
+export async function updateOrderStatus(orderId, status) {
+  const data = await adminJson(`${API_BASE}/api/orders/${orderId}/status/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+  return data.order;
+}
+
+export async function fetchCheckoutSettings() {
+  const data = await adminJson(`${API_BASE}/api/checkout-settings/`);
+  return data.settings;
+}
+
+export async function saveCheckoutSettings(settings) {
+  const data = await adminJson(`${API_BASE}/api/checkout-settings/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings),
+  });
+  return data.settings;
+}

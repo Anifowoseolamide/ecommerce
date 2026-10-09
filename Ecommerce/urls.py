@@ -46,6 +46,10 @@ urlpatterns = [
     path("api/products/delete/<uuid:product_id>/", api_views.delete_product, name="api_delete_product"),
     path("api/upload/", api_views.upload_file, name="api_upload_file"),
     path("api/admin/login/", api_views.api_admin_login, name="api_admin_login"),
+    path("api/orders/create/", api_views.create_order, name="api_create_order"),
+    path("api/orders/", api_views.list_orders, name="api_list_orders"),
+    path("api/orders/<uuid:order_id>/status/", api_views.update_order_status, name="api_update_order_status"),
+    path("api/checkout-settings/", api_views.checkout_settings, name="api_checkout_settings"),
 ]
 
 

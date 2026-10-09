@@ -45,7 +45,7 @@ export default function TopAnnouncementBar({ banner }) {
       <div className="container">
         <div className="bar-content">
           <div className="promo-text">
-            <span>{banner.announcement_text || "Website Sale Up to 30% off + Free Shipping"}</span>
+            <span>{banner.announcement_text || "Website Sale Up to 30% off"}</span>
             <a href="#catalog">{banner.announcement_link_text || "shop now"}</a>
           </div>
 

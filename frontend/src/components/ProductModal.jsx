@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, ShieldCheck, Truck, Sparkles } from 'lucide-react';
+import { X, Check, ShieldCheck, Sparkles } from 'lucide-react';
 import { formatCurrency } from '../data/initialData';
 
 export default function ProductModal({ product, currency = 'NGN', onClose, onAddToCart }) {
@@ -70,10 +70,6 @@ export default function ProductModal({ product, currency = 'NGN', onClose, onAdd
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
               <ShieldCheck size={15} color="var(--color-gold)" />
               <span>100% Authentic Formulation • Laboratory Certified</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-              <Truck size={15} color="var(--color-gold)" />
-              <span>Complimentary worldwide luxury courier shipping</span>
             </div>
           </div>
         </div>

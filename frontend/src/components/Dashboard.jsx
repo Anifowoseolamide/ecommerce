@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Image as ImageIcon, Save, CheckCircle2, ArrowLeft, RefreshCw, Plus, Trash2, Edit2, Sparkles, X, Check, Loader2 } from 'lucide-react';
+import { Upload, Image as ImageIcon, Save, CheckCircle2, ArrowLeft, RefreshCw, Plus, Trash2, Edit2, Sparkles, X, Check, Loader2, ClipboardList } from 'lucide-react';
 import { uploadMediaFile } from '../services/api';
+import OrdersPanel from './OrdersPanel';
 import { INITIAL_SLIDES, CURRENCY_RATES, formatCurrency } from '../data/initialData';
 
 // Prices are stored in NGN (the storefront's base currency); USD entries are converted at the site rate
@@ -38,7 +39,7 @@ export default function Dashboard({
   onLogoutAdmin
 }) {
 
-  const [activeTab, setActiveTab] = useState('hero'); // 'hero' | 'categories' | 'products'
+  const [activeTab, setActiveTab] = useState('hero'); // 'hero' | 'categories' | 'products' | 'orders'
   
   // Slides State (Rotating cosmetic & beauty banners)
   const [slides, setSlides] = useState(
@@ -48,7 +49,7 @@ export default function Dashboard({
 
   // Top Announcement & Countdown Settings
   const [promoForm, setPromoForm] = useState({
-    announcement_text: banner.announcement_text || 'Website Sale Up to 30% off + Free Shipping',
+    announcement_text: banner.announcement_text || 'Website Sale Up to 30% off',
     announcement_link_text: banner.announcement_link_text || 'shop now',
     countdown_days: banner.countdown_days || 22,
     countdown_hours: banner.countdown_hours || 9,
@@ -285,6 +286,13 @@ export default function Dashboard({
             <ImageIcon size={15} />
             <span>PRODUCTS & CATALOG IMAGES ({products.length})</span>
           </button>
+          <button
+            className={`dashboard-tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
+            onClick={() => setActiveTab('orders')}
+          >
+            <ClipboardList size={15} />
+            <span>ORDERS & PAYMENT DETAILS</span>
+          </button>
         </div>
 
         {savingNotice && (
@@ -293,6 +301,9 @@ export default function Dashboard({
             <span>{savingNotice}</span>
           </div>
         )}
+
+        {/* TAB 4: CUSTOMER ORDERS + PAYMENT/WHATSAPP DETAILS */}
+        {activeTab === 'orders' && <OrdersPanel />}
 
         {/* TAB 1: ROTATING SPLIT HERO BANNERS */}
         {activeTab === 'hero' && (
