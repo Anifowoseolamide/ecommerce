@@ -26,7 +26,7 @@ import {
   deleteProductOnBackend
 } from './services/api';
 
-import { INITIAL_BANNER, INITIAL_CATEGORIES, INITIAL_PRODUCTS } from './data/initialData';
+import { INITIAL_BANNER, INITIAL_CATEGORIES } from './data/initialData';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('store'); // 'store' | 'dashboard'
@@ -42,7 +42,7 @@ export default function App() {
 
   const [banner, setBanner] = useState(INITIAL_BANNER);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState([]);
   
   const [currency, setCurrency] = useState('NGN');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -69,7 +69,7 @@ export default function App() {
       if (catData && catData.length > 0) setCategories(catData);
 
       const prodData = await fetchProductsData();
-      if (prodData && prodData.length > 0) setProducts(prodData);
+      if (Array.isArray(prodData)) setProducts(prodData);
     }
     loadData();
   }, []);

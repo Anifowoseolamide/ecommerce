@@ -1,11 +1,12 @@
-import { INITIAL_BANNER, INITIAL_CATEGORIES, INITIAL_PRODUCTS } from '../data/initialData';
+import { INITIAL_BANNER, INITIAL_CATEGORIES } from '../data/initialData';
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
 const STORAGE_KEYS = {
   BANNER: 'swissmax_banner_data',
   CATEGORIES: 'swissmax_categories_data',
-  PRODUCTS: 'swissmax_products_data',
+  // v2: v1 caches contain the removed demo products and unsaved local-only products
+  PRODUCTS: 'swissmax_products_data_v2',
 };
 
 export async function fetchBannerData() {
@@ -120,7 +121,8 @@ export async function fetchProductsData() {
     const res = await fetch(`${API_BASE}/api/products/`);
     if (res.ok) {
       const data = await res.json();
-      if (data.products && data.products.length > 0) {
+      // The backend is the source of truth — an empty list means there are no products yet
+      if (Array.isArray(data.products)) {
         const formatted = data.products.map(p => ({
           id: p.id,
           name: p.name,
@@ -129,7 +131,7 @@ export async function fetchProductsData() {
           description: p.description,
           category_slug: p.category_slug,
           category_name: p.category_name,
-          image: p.image || (INITIAL_PRODUCTS.find(ip => ip.name === p.name)?.image) || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
+          image: p.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
           tag: p.category_name
         }));
         localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(formatted));
@@ -138,11 +140,12 @@ export async function fetchProductsData() {
     }
   } catch (e) {}
 
+  // Backend unreachable: show the last list it returned
   const local = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
   if (local) {
     try { return JSON.parse(local); } catch(e){}
   }
-  return INITIAL_PRODUCTS;
+  return [];
 }
 
 export async function saveProductsData(productsList) {
