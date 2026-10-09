@@ -23,7 +23,10 @@ import {
   createProductOnBackend,
   updateProductOnBackend,
   updateCategoryOnBackend,
-  deleteProductOnBackend
+  deleteProductOnBackend,
+  getStoredAdminAuth,
+  clearStoredAdminAuth,
+  ADMIN_SESSION_EXPIRED_EVENT
 } from './services/api';
 
 import { INITIAL_BANNER, INITIAL_CATEGORIES } from './data/initialData';
@@ -31,14 +34,8 @@ import { INITIAL_BANNER, INITIAL_CATEGORIES } from './data/initialData';
 export default function App() {
   const [currentView, setCurrentView] = useState('store'); // 'store' | 'dashboard'
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
-    try {
-      const auth = localStorage.getItem('swissmax_admin_auth') || sessionStorage.getItem('swissmax_admin_auth');
-      return Boolean(auth);
-    } catch (e) {
-      return false;
-    }
-  });
+  // Only a stored backend token counts as logged in; the backend still verifies it on every save
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => Boolean(getStoredAdminAuth()));
 
   const [banner, setBanner] = useState(INITIAL_BANNER);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
@@ -134,11 +131,21 @@ export default function App() {
   };
 
   const handleLogoutAdmin = () => {
-    localStorage.removeItem('swissmax_admin_auth');
-    sessionStorage.removeItem('swissmax_admin_auth');
+    clearStoredAdminAuth();
     setIsAdminAuthenticated(false);
     setCurrentView('store');
   };
+
+  // Backend rejected the admin token (expired/invalid): log out and ask for a fresh login
+  useEffect(() => {
+    const onSessionExpired = () => {
+      setIsAdminAuthenticated(false);
+      setCurrentView('store');
+      setIsAdminModalOpen(true);
+    };
+    window.addEventListener(ADMIN_SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () => window.removeEventListener(ADMIN_SESSION_EXPIRED_EVENT, onSessionExpired);
+  }, []);
 
   // Dashboard Update Handlers connected to Backend
   const handleUpdateBanner = async (updatedBanner, imageFiles) => {

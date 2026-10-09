@@ -24,11 +24,13 @@ export default function AdminLoginModal({ isOpen, onClose, onLoginSuccess }) {
         if (rememberMe) {
           localStorage.setItem('swissmax_admin_auth', JSON.stringify({
             username: res.user.username,
+            token: res.token,
             timestamp: Date.now()
           }));
         } else {
           sessionStorage.setItem('swissmax_admin_auth', JSON.stringify({
             username: res.user.username,
+            token: res.token,
             timestamp: Date.now()
           }));
         }

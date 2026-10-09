@@ -1,6 +1,9 @@
 import json
 import os
 import uuid
+from functools import wraps
+from django.contrib.auth import get_user_model
+from django.core import signing
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -24,6 +27,36 @@ def image_field_url(field):
     if value.startswith('http://') or value.startswith('https://'):
         return value
     return field.url
+
+
+# Admin API auth: login returns a signed token that the dashboard sends as
+# "Authorization: Bearer <token>". Signed with SECRET_KEY, so rotating it logs everyone out.
+ADMIN_TOKEN_SALT = 'swissmax.admin-api'
+ADMIN_TOKEN_MAX_AGE = 60 * 60 * 12  # 12 hours
+
+
+def make_admin_token(user):
+    return signing.dumps({'uid': user.pk}, salt=ADMIN_TOKEN_SALT)
+
+
+def staff_required(view):
+    """Reject the request unless it carries a valid, unexpired token for an active staff user."""
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer ') or not auth_header[7:].strip():
+            return JsonResponse({'error': 'Admin login required.'}, status=401)
+        try:
+            data = signing.loads(auth_header[7:].strip(), salt=ADMIN_TOKEN_SALT, max_age=ADMIN_TOKEN_MAX_AGE)
+            user = get_user_model().objects.get(pk=data['uid'], is_active=True)
+        except (signing.BadSignature, KeyError, TypeError, get_user_model().DoesNotExist):
+            # BadSignature also covers SignatureExpired
+            return JsonResponse({'error': 'Admin session expired or invalid. Please log in again.'}, status=401)
+        if not (user.is_staff or user.is_superuser):
+            return JsonResponse({'error': 'Admin privileges required.'}, status=403)
+        request.user = user
+        return view(request, *args, **kwargs)
+    return wrapper
 
 
 def banner_to_dict(banner):
@@ -102,6 +135,7 @@ def get_banners(request):
 
 
 @csrf_exempt
+@staff_required
 def update_banner(request):
     """Update active banner data and banner images."""
     if request.method != 'POST':
@@ -198,6 +232,7 @@ def get_categories(request):
 
 
 @csrf_exempt
+@staff_required
 def update_category(request, category_id):
     """Update a category's name or image."""
     if request.method != 'POST':
@@ -268,6 +303,7 @@ def get_products(request):
 
 
 @csrf_exempt
+@staff_required
 def create_product(request):
     """Create a new product with optional image upload."""
     if request.method != 'POST':
@@ -334,6 +370,7 @@ def create_product(request):
 
 
 @csrf_exempt
+@staff_required
 def update_product(request, product_id):
     """Update a product's details and/or image."""
     if request.method != 'POST':
@@ -398,6 +435,7 @@ def update_product(request, product_id):
 
 
 @csrf_exempt
+@staff_required
 def delete_product(request, product_id):
     """Delete a product and all its images from the database."""
     if request.method != 'POST':
@@ -416,6 +454,7 @@ def delete_product(request, product_id):
 
 
 @csrf_exempt
+@staff_required
 def upload_file(request):
     """Upload general asset files to Supabase Storage (with local fallback)."""
     if request.method != 'POST':
@@ -441,7 +480,7 @@ def upload_file(request):
 @csrf_exempt
 def api_admin_login(request):
     """Authenticate staff / superuser for the frontend admin dashboard."""
-    from django.contrib.auth import authenticate, login
+    from django.contrib.auth import authenticate
 
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
@@ -463,9 +502,9 @@ def api_admin_login(request):
     user = authenticate(request, username=username, password=password)
     if user is not None:
         if user.is_staff or user.is_superuser:
-            login(request, user)
             return JsonResponse({
                 'success': True,
+                'token': make_admin_token(user),
                 'user': {
                     'username': user.username,
                     'is_superuser': user.is_superuser,

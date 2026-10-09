@@ -9,6 +9,40 @@ const STORAGE_KEYS = {
   PRODUCTS: 'swissmax_products_data_v2',
 };
 
+export const ADMIN_AUTH_KEY = 'swissmax_admin_auth';
+// Fired when the backend rejects the admin token, so the app can log out and ask for a fresh login
+export const ADMIN_SESSION_EXPIRED_EVENT = 'swissmax:admin-session-expired';
+
+export function getStoredAdminAuth() {
+  try {
+    const raw = localStorage.getItem(ADMIN_AUTH_KEY) || sessionStorage.getItem(ADMIN_AUTH_KEY);
+    const auth = raw ? JSON.parse(raw) : null;
+    // Entries saved before token auth existed can't make authorized requests
+    return auth && auth.token ? auth : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+export function clearStoredAdminAuth() {
+  localStorage.removeItem(ADMIN_AUTH_KEY);
+  sessionStorage.removeItem(ADMIN_AUTH_KEY);
+}
+
+// fetch() for admin-only endpoints: attaches the bearer token and handles a rejected token
+async function adminFetch(url, options = {}) {
+  const token = getStoredAdminAuth()?.token || '';
+  const res = await fetch(url, {
+    ...options,
+    headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) {
+    clearStoredAdminAuth();
+    window.dispatchEvent(new Event(ADMIN_SESSION_EXPIRED_EVENT));
+  }
+  return res;
+}
+
 export async function fetchBannerData() {
   try {
     const res = await fetch(`${API_BASE}/api/banners/`);
@@ -56,7 +90,7 @@ export async function saveBannerData(updatedBanner, imageFiles = {}) {
       formData.append('right_image_file', imageFiles.right_image_file);
     }
 
-    const res = await fetch(`${API_BASE}/api/banners/update/`, {
+    const res = await adminFetch(`${API_BASE}/api/banners/update/`, {
       method: 'POST',
       body: formData,
     });
@@ -157,7 +191,7 @@ export async function uploadMediaFile(file) {
   try {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch(`${API_BASE}/api/upload/`, {
+    const res = await adminFetch(`${API_BASE}/api/upload/`, {
       method: 'POST',
       body: formData,
     });
@@ -209,7 +243,7 @@ export async function createProductOnBackend(productData, imageFile = null) {
 
   let res;
   try {
-    res = await fetch(`${API_BASE}/api/products/create/`, {
+    res = await adminFetch(`${API_BASE}/api/products/create/`, {
       method: 'POST',
       body: formData,
     });
@@ -240,7 +274,7 @@ export async function updateProductOnBackend(productId, updates, imageFile = nul
       formData.append('image_url', updates.image);
     }
 
-    const res = await fetch(`${API_BASE}/api/products/update/${productId}/`, {
+    const res = await adminFetch(`${API_BASE}/api/products/update/${productId}/`, {
       method: 'POST',
       body: formData,
     });
@@ -260,7 +294,7 @@ export async function updateCategoryOnBackend(categoryId, name, imageFile = null
     if (name) formData.append('category_name', name);
     if (imageFile) formData.append('image', imageFile);
 
-    const res = await fetch(`${API_BASE}/api/categories/update/${categoryId}/`, {
+    const res = await adminFetch(`${API_BASE}/api/categories/update/${categoryId}/`, {
       method: 'POST',
       body: formData,
     });
@@ -276,7 +310,7 @@ export async function updateCategoryOnBackend(categoryId, name, imageFile = null
 
 export async function deleteProductOnBackend(productId) {
   try {
-    const res = await fetch(`${API_BASE}/api/products/delete/${productId}/`, {
+    const res = await adminFetch(`${API_BASE}/api/products/delete/${productId}/`, {
       method: 'POST',
     });
     if (res.ok) {
