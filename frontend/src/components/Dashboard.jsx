@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
-import { Upload, Image as ImageIcon, Save, CheckCircle2, ArrowLeft, RefreshCw, Plus, Trash2, Edit2, Sparkles, X, Check, Loader2, ClipboardList } from 'lucide-react';
-import { uploadMediaFile } from '../services/api';
+import React, { useState, useRef, useEffect } from 'react';
+import { Upload, Save, CheckCircle2, RefreshCw, Plus, Trash2, Edit2, Sparkles, X, Check, Loader2, ClipboardList, Images, Tags, Package, Landmark, Store, LogOut } from 'lucide-react';
+import { uploadMediaFile, fetchOrders } from '../services/api';
 import OrdersPanel from './OrdersPanel';
-import { INITIAL_SLIDES, CURRENCY_RATES, formatCurrency } from '../data/initialData';
+import PaymentSettingsPanel from './PaymentSettingsPanel';
+import { INITIAL_SLIDES, CURRENCY_RATES, formatCurrency, PRODUCT_TAGS, tagClassName } from '../data/initialData';
 
 // Prices are stored in NGN (the storefront's base currency); USD entries are converted at the site rate
 const PRICE_CURRENCIES = ['NGN', 'USD'];
@@ -39,7 +40,15 @@ export default function Dashboard({
   onLogoutAdmin
 }) {
 
-  const [activeTab, setActiveTab] = useState('hero'); // 'hero' | 'categories' | 'products' | 'orders'
+  const [activeTab, setActiveTab] = useState('hero'); // 'hero' | 'categories' | 'products' | 'orders' | 'payments'
+  const [newOrderCount, setNewOrderCount] = useState(0);
+
+  // Sidebar badge; load errors are shown on the Orders page itself
+  useEffect(() => {
+    fetchOrders()
+      .then((list) => setNewOrderCount(list.filter((o) => o.status === 'new').length))
+      .catch(() => {});
+  }, []);
   
   // Slides State (Rotating cosmetic & beauty banners)
   const [slides, setSlides] = useState(
@@ -79,7 +88,7 @@ export default function Dashboard({
     category_name: 'Skincare',
     description: '',
     image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
-    tag: 'New'
+    tag: ''
   });
 
   const currentSlide = slides[activeSlideIdx] || slides[0];
@@ -207,103 +216,85 @@ export default function Dashboard({
       category_name: 'Skincare',
       description: '',
       image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80',
-      tag: 'New'
+      tag: ''
     });
     alert('New SwissMax product added to catalog!');
   };
 
+  const navSections = [
+    {
+      heading: 'Storefront',
+      items: [
+        { id: 'hero', label: 'Hero slides', icon: Images, count: slides.length },
+        { id: 'categories', label: 'Categories', icon: Tags, count: categories.length },
+        { id: 'products', label: 'Products', icon: Package, count: products.length },
+      ],
+    },
+    {
+      heading: 'Sales',
+      items: [
+        { id: 'orders', label: 'Orders', icon: ClipboardList, count: newOrderCount > 0 ? newOrderCount : undefined, highlight: true },
+        { id: 'payments', label: 'Payment & WhatsApp', icon: Landmark },
+      ],
+    },
+  ];
+
   return (
-    <div className="dashboard-wrapper">
-      <div className="container">
-        {/* Dashboard Top Header */}
-        <div className="dashboard-header">
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--color-gold)', fontWeight: '700' }}>
-                ADMIN STUDIO
-              </span>
-              <span style={{ fontSize: '11px', color: '#BBB' }}>• SwissMax Beauty Management</span>
-            </div>
-            <h1 className="dashboard-title">IMAGE & STOREFRONT DASHBOARD</h1>
-            <p className="dashboard-subtitle">
-              Manage the 5 rotating split hero banners, category images, live countdown timers, and product catalog.
-            </p>
-          </div>
+    <div className="admin-shell">
+      <aside className="admin-sidebar">
+        <div className="admin-brand">
+          <span className="admin-brand-mark">SWISSMAX</span>
+          <span className="admin-brand-sub">Admin Studio</span>
+        </div>
 
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <button 
-              className="btn-discover"
-              onClick={onBackToStore}
-              style={{ borderColor: '#0B0C0E', color: '#0B0C0E', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <ArrowLeft size={14} />
-              <span>VIEW LIVE STORE</span>
+        <nav className="admin-nav">
+          {navSections.map((section) => (
+            <React.Fragment key={section.heading}>
+              <span className="admin-nav-heading">{section.heading}</span>
+              {section.items.map(({ id, label, icon: Icon, count, highlight }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`admin-nav-item ${activeTab === id ? 'active' : ''}`}
+                  onClick={() => setActiveTab(id)}
+                >
+                  <Icon size={17} />
+                  <span>{label}</span>
+                  {count !== undefined && (
+                    <span className={`admin-nav-count ${highlight ? 'highlight' : ''}`}>{count}</span>
+                  )}
+                </button>
+              ))}
+            </React.Fragment>
+          ))}
+        </nav>
+
+        <div className="admin-sidebar-footer">
+          <button type="button" className="admin-nav-item" onClick={onBackToStore}>
+            <Store size={17} />
+            <span>View live store</span>
+          </button>
+          {onLogoutAdmin && (
+            <button type="button" className="admin-nav-item admin-nav-logout" onClick={onLogoutAdmin} title="Lock admin session">
+              <LogOut size={17} />
+              <span>Log out</span>
             </button>
-            {onLogoutAdmin && (
-              <button
-                onClick={onLogoutAdmin}
-                style={{
-                  background: '#fef2f2',
-                  border: '1.5px solid #fca5a5',
-                  color: '#b91c1c',
-                  padding: '9px 16px',
-                  borderRadius: '6px',
-                  fontSize: '11px',
-                  fontWeight: '800',
-                  letterSpacing: '0.06em',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s'
-                }}
-                title="Lock admin session"
-              >
-                🔒 LOG OUT ADMIN
-              </button>
-            )}
-          </div>
+          )}
         </div>
+      </aside>
 
-
-        {/* Tab Navigation */}
-        <div className="dashboard-tabs">
-          <button
-            className={`dashboard-tab-btn ${activeTab === 'hero' ? 'active' : ''}`}
-            onClick={() => setActiveTab('hero')}
-          >
-            <ImageIcon size={15} />
-            <span>ROTATING HERO SLIDES ({slides.length} SLIDES)</span>
-          </button>
-          <button
-            className={`dashboard-tab-btn ${activeTab === 'categories' ? 'active' : ''}`}
-            onClick={() => setActiveTab('categories')}
-          >
-            <ImageIcon size={15} />
-            <span>CATEGORIES (SKINCARE, COSMETICS, PERFUME)</span>
-          </button>
-          <button
-            className={`dashboard-tab-btn ${activeTab === 'products' ? 'active' : ''}`}
-            onClick={() => setActiveTab('products')}
-          >
-            <ImageIcon size={15} />
-            <span>PRODUCTS & CATALOG IMAGES ({products.length})</span>
-          </button>
-          <button
-            className={`dashboard-tab-btn ${activeTab === 'orders' ? 'active' : ''}`}
-            onClick={() => setActiveTab('orders')}
-          >
-            <ClipboardList size={15} />
-            <span>ORDERS & PAYMENT DETAILS</span>
-          </button>
-        </div>
-
+      <main className="admin-main">
         {savingNotice && (
-          <div style={{ background: '#FAF6EF', border: '1px solid var(--color-gold)', padding: '12px 18px', marginBottom: '20px', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '10px', color: '#333', fontSize: '12px', fontWeight: '600' }}>
+          <div style={{ background: '#FAF6EF', border: '1px solid var(--color-gold)', padding: '12px 18px', marginBottom: '20px', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '10px', color: '#333', fontSize: '12px', fontWeight: '600' }}>
             <CheckCircle2 size={16} color="var(--color-gold)" />
             <span>{savingNotice}</span>
           </div>
         )}
 
-        {/* TAB 4: CUSTOMER ORDERS + PAYMENT/WHATSAPP DETAILS */}
-        {activeTab === 'orders' && <OrdersPanel />}
+        {activeTab === 'orders' && (
+          <OrdersPanel onOrdersChange={(list) => setNewOrderCount(list.filter((o) => o.status === 'new').length)} />
+        )}
+        {activeTab === 'payments' && <PaymentSettingsPanel />}
 
         {/* TAB 1: ROTATING SPLIT HERO BANNERS */}
         {activeTab === 'hero' && (
@@ -755,6 +746,9 @@ export default function Dashboard({
                         <span style={{ fontSize: '10px', color: 'var(--color-gold)', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                           {prod.category_name}
                         </span>
+                        {prod.tag && (
+                          <span className={`dashboard-tag ${tagClassName(prod.tag)}`}>{prod.tag}</span>
+                        )}
                         <h4 style={{ fontFamily: 'var(--font-serif)', fontSize: '15px', fontWeight: '600', margin: '2px 0' }}>
                           {prod.name}
                         </h4>
@@ -782,6 +776,7 @@ export default function Dashboard({
                                 price_currency: 'NGN',
                                 description: prod.description || '',
                                 category_slug: prod.category_slug || '',
+                                tag: prod.tag || '',
                               });
                             }
                           }}
@@ -822,7 +817,7 @@ export default function Dashboard({
                         background: '#FFF',
                         padding: '20px 20px 24px',
                       }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '16px', marginBottom: '16px' }}>
                           {/* Name */}
                           <div>
                             <label style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '5px' }}>Product Name</label>
@@ -872,6 +867,18 @@ export default function Dashboard({
                               {categories.map(c => (
                                 <option key={c.slug} value={c.slug}>{c.name}</option>
                               ))}
+                            </select>
+                          </div>
+                          {/* Tag */}
+                          <div>
+                            <label style={{ fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '5px' }}>Tag</label>
+                            <select
+                              className="form-select"
+                              value={editForm.tag}
+                              onChange={e => setEditForm({ ...editForm, tag: e.target.value })}
+                            >
+                              <option value="">No tag</option>
+                              {PRODUCT_TAGS.map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
                           </div>
                         </div>
@@ -1030,6 +1037,19 @@ export default function Dashboard({
                 </div>
 
                 <div className="form-group">
+                  <label className="form-label">Tag (optional):</label>
+                  <select
+                    className="form-select"
+                    value={newProduct.tag}
+                    onChange={(e) => setNewProduct({ ...newProduct, tag: e.target.value })}
+                  >
+                    <option value="">No tag</option>
+                    {PRODUCT_TAGS.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <div className="form-help">Shown as a badge on the product photo in the store.</div>
+                </div>
+
+                <div className="form-group">
                   <label className="form-label">Product Image (File or URL):</label>
                   <input
                     type="file"
@@ -1084,7 +1104,7 @@ export default function Dashboard({
             </div>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 }

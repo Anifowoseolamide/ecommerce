@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { Search, ShoppingBag, User, Sliders, X, Menu, ChevronRight } from 'lucide-react';
+import { Search, ShoppingBag, MessageCircle, Sliders, X, Menu, ChevronRight } from 'lucide-react';
 import swissmaxLogo from '../assets/swissmax-logo.jpg';
+import { whatsAppLink } from '../utils/whatsapp';
+
+const CHAT_GREETING = 'Hello SwissMax Beauty, I have a question.';
 
 export default function Header({
   cartCount,
@@ -13,6 +16,7 @@ export default function Header({
   onToggleView,
   searchQuery,
   onSearchChange,
+  whatsappNumber,
 }) {
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -112,14 +116,19 @@ export default function Header({
                 )}
               </div>
 
-              {/* User Profile */}
-              <button 
-                className="icon-btn desktop-user" 
-                title="VIP Client Portal" 
-                onClick={() => alert("SwissMax VIP Client Portal")}
-              >
-                <User size={19} />
-              </button>
+              {/* Chat with the shop on WhatsApp (hidden until a number is set in the dashboard) */}
+              {whatsappNumber && (
+                <a
+                  className="icon-btn desktop-user"
+                  href={whatsAppLink(whatsappNumber, CHAT_GREETING)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Chat with us on WhatsApp"
+                  aria-label="Chat with us on WhatsApp"
+                >
+                  <MessageCircle size={19} />
+                </a>
+              )}
 
               {/* Shopping Bag with Live Badge */}
               <button className="icon-btn" onClick={onOpenCart} title="View Shopping Bag">
@@ -219,6 +228,19 @@ export default function Header({
                   <span>OUR HERITAGE</span>
                   <ChevronRight size={14} color="var(--color-gold)" />
                 </button>
+
+                {whatsappNumber && (
+                  <a
+                    className="mobile-drawer-link"
+                    href={whatsAppLink(whatsappNumber, CHAT_GREETING)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <span>CHAT WITH US ON WHATSAPP</span>
+                    <MessageCircle size={14} color="var(--color-gold)" />
+                  </a>
+                )}
               </div>
 
               {/* Mobile Currency & Admin Action */}

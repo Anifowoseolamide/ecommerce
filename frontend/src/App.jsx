@@ -15,6 +15,7 @@ import AdminLoginModal from './components/AdminLoginModal';
 
 import {
   fetchBannerData,
+  fetchStoreContact,
   saveBannerData,
   fetchCategoriesData,
   saveCategoriesData,
@@ -55,9 +56,13 @@ export default function App() {
 
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [storeWhatsApp, setStoreWhatsApp] = useState('');
 
   // Load backend/persisted data on startup
   useEffect(() => {
+    // Independent of the catalog load so the chat button isn't held up by it
+    fetchStoreContact().then((contact) => setStoreWhatsApp(contact.whatsapp_number));
+
     async function loadData() {
       const bannerData = await fetchBannerData();
       if (bannerData) setBanner(bannerData);
@@ -176,6 +181,7 @@ export default function App() {
           description: backendProduct.description,
           category_name: backendProduct.category_name,
           category_slug: backendProduct.category_slug,
+          tag: backendProduct.tag || '',
           image: backendProduct.image || updates.image,
         }
       : updates;
@@ -198,7 +204,7 @@ export default function App() {
       category_name: savedProd.category_name,
       category_slug: savedProd.category_slug,
       image: savedProd.image || newProd.image,
-      tag: savedProd.category_name
+      tag: savedProd.tag || ''
     };
 
     const updated = [productToAdd, ...products];
@@ -218,22 +224,28 @@ export default function App() {
 
   return (
     <div className="swissmax-app">
-      {/* 1. Top Announcement Bar with Live Countdown (Screenshot 1 Layout) */}
-      <TopAnnouncementBar banner={banner} />
+      {/* The admin dashboard has its own sidebar layout, so store chrome only shows on the storefront */}
+      {currentView !== 'dashboard' && (
+        <>
+          {/* 1. Top Announcement Bar with Live Countdown (Screenshot 1 Layout) */}
+          <TopAnnouncementBar banner={banner} />
 
-      {/* 2. Primary Luxury Header with SwissMax Logo & Controls */}
-      <Header
-        cartCount={totalCartCount}
-        onOpenCart={() => setIsCartOpen(true)}
-        selectedCurrency={currency}
-        onChangeCurrency={setCurrency}
-        activeCategory={activeCategory}
-        onSelectCategory={setActiveCategory}
-        currentView={currentView}
-        onToggleView={setCurrentView}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
+          {/* 2. Primary Luxury Header with SwissMax Logo & Controls */}
+          <Header
+            cartCount={totalCartCount}
+            onOpenCart={() => setIsCartOpen(true)}
+            selectedCurrency={currency}
+            onChangeCurrency={setCurrency}
+            activeCategory={activeCategory}
+            onSelectCategory={setActiveCategory}
+            currentView={currentView}
+            onToggleView={setCurrentView}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            whatsappNumber={storeWhatsApp}
+          />
+        </>
+      )}
 
       {/* Main View Switcher: Storefront vs Dashboard */}
       {currentView === 'dashboard' ? (
@@ -295,13 +307,12 @@ export default function App() {
       )}
 
       {/* 6. Luxury Footer */}
-      <Footer 
-        onSelectCategory={(slug) => {
-          if (currentView !== 'store') setCurrentView('store');
-          setActiveCategory(slug);
-        }} 
-        onOpenAdminLogin={handleOpenAdminStudio}
-      />
+      {currentView !== 'dashboard' && (
+        <Footer
+          onSelectCategory={setActiveCategory}
+          onOpenAdminLogin={handleOpenAdminStudio}
+        />
+      )}
 
       {/* Product Quick View Modal */}
       <ProductModal

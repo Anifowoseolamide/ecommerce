@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowRight, Plus } from 'lucide-react';
-import { formatCurrency } from '../data/initialData';
+import { formatCurrency, tagClassName } from '../data/initialData';
 
 export default function ProductCard({ 
   product, 
@@ -20,7 +20,7 @@ export default function ProductCard({
           loading="lazy"
         />
         {product.tag && (
-          <span className="product-tag">{product.tag}</span>
+          <span className={`product-tag ${tagClassName(product.tag)}`}>{product.tag}</span>
         )}
         <button 
           className="product-quick-add"

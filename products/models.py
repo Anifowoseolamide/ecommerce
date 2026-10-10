@@ -30,12 +30,21 @@ class SizeVariant(BaseModel):
     def __str__(self) -> str:
         return self.size
 
+# Badge shown on the product photo in the store
+PRODUCT_TAG_CHOICES = [
+    ("New", "New"),
+    ("Limited Edition", "Limited Edition"),
+    ("Sale", "Sale"),
+]
+
+
 class Product(BaseModel):
     product_name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="products")
     price = models.IntegerField()
     product_description = models.TextField()    
+    tag = models.CharField(max_length=30, choices=PRODUCT_TAG_CHOICES, blank=True, default="")
     color_variant = models.ManyToManyField(ColorVariant, blank= True)
     size_variant = models.ManyToManyField(SizeVariant, blank= True)
 

@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   CATEGORIES: 'swissmax_categories_data',
   // v2: v1 caches contain the removed demo products and unsaved local-only products
   PRODUCTS: 'swissmax_products_data_v2',
+  CONTACT: 'swissmax_store_contact',
 };
 
 export const ADMIN_AUTH_KEY = 'swissmax_admin_auth';
@@ -166,7 +167,7 @@ export async function fetchProductsData() {
           category_slug: p.category_slug,
           category_name: p.category_name,
           image: p.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-          tag: p.category_name
+          tag: p.tag || ''
         }));
         localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(formatted));
         return formatted;
@@ -235,6 +236,7 @@ export async function createProductOnBackend(productData, imageFile = null) {
   formData.append('price', productData.price);
   formData.append('description', productData.description || '');
   formData.append('category', productData.category_slug || '');
+  formData.append('tag', productData.tag || '');
   if (imageFile) {
     formData.append('image', imageFile);
   } else if (productData.image) {
@@ -267,6 +269,7 @@ export async function updateProductOnBackend(productId, updates, imageFile = nul
     if (updates.price !== undefined && updates.price !== null) formData.append('price', updates.price);
     if (updates.description !== undefined) formData.append('description', updates.description);
     if (updates.category_slug) formData.append('category', updates.category_slug);
+    if (updates.tag !== undefined) formData.append('tag', updates.tag);
     // Support image updates: either a File object or a URL string
     if (imageFile) {
       formData.append('image', imageFile);
@@ -389,4 +392,23 @@ export async function saveCheckoutSettings(settings) {
     body: JSON.stringify(settings),
   });
   return data.settings;
+}
+
+// Public: the shop's WhatsApp number for the "Chat with us" buttons. Cached so it shows while the backend wakes up.
+export async function fetchStoreContact() {
+  try {
+    const res = await fetch(`${API_BASE}/api/store-contact/`);
+    if (res.ok) {
+      const data = await res.json();
+      const contact = { whatsapp_number: data.whatsapp_number || '' };
+      localStorage.setItem(STORAGE_KEYS.CONTACT, JSON.stringify(contact));
+      return contact;
+    }
+  } catch (e) {}
+
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CONTACT)) || { whatsapp_number: '' };
+  } catch (e) {
+    return { whatsapp_number: '' };
+  }
 }

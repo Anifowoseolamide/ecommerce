@@ -135,3 +135,38 @@ class AdminApiAuthTests(TestCase):
                                content_type="application/json")
         self.assertEqual(res.status_code, 403)
         self.assertNotIn("token", res.json())
+
+
+class ProductTagTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user("admin", password="pw-123456", is_staff=True)
+
+    def create(self, **fields):
+        data = {"name": "Glow Serum", "price": "150", "category": "skincare", **fields}
+        return self.client.post("/api/products/create/", data, **auth_header(self.admin))
+
+    def test_tag_is_saved_and_listed(self):
+        res = self.create(tag="Limited Edition")
+        self.assertEqual(res.json()["product"]["tag"], "Limited Edition")
+        self.assertEqual(self.client.get("/api/products/").json()["products"][0]["tag"], "Limited Edition")
+
+    def test_no_tag_by_default(self):
+        self.assertEqual(self.create().json()["product"]["tag"], "")
+
+    def test_unknown_tag_is_rejected(self):
+        res = self.create(tag="Free Gift")
+        self.assertEqual(res.status_code, 400)
+        self.assertEqual(Product.objects.count(), 0)
+
+    def test_update_changes_and_clears_tag(self):
+        uid = self.create(tag="New").json()["product"]["id"]
+        url = f"/api/products/update/{uid}/"
+        self.assertEqual(self.client.post(url, {"tag": "Sale"}, **auth_header(self.admin)).json()["product"]["tag"], "Sale")
+        self.assertEqual(self.client.post(url, {"tag": ""}, **auth_header(self.admin)).json()["product"]["tag"], "")
+        self.assertEqual(self.client.post(url, {"tag": "Bogus"}, **auth_header(self.admin)).status_code, 400)
+        self.assertEqual(Product.objects.get(uid=uid).tag, "")
+
+    def test_update_without_tag_field_keeps_tag(self):
+        uid = self.create(tag="Sale").json()["product"]["id"]
+        self.client.post(f"/api/products/update/{uid}/", {"name": "Renamed"}, **auth_header(self.admin))
+        self.assertEqual(Product.objects.get(uid=uid).tag, "Sale")

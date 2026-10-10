@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { RefreshCw, Save, Phone, MessageCircle, Loader2 } from 'lucide-react';
+import { RefreshCw, Phone, MessageCircle } from 'lucide-react';
 import { formatCurrency } from '../data/initialData';
-import { fetchOrders, updateOrderStatus, fetchCheckoutSettings, saveCheckoutSettings } from '../services/api';
+import { fetchOrders, updateOrderStatus } from '../services/api';
 import { whatsAppLink } from '../utils/whatsapp';
 
 const STATUS_OPTIONS = [
@@ -11,27 +11,21 @@ const STATUS_OPTIONS = [
   { value: 'cancelled', label: 'Cancelled', color: '#757575', background: '#F2F2F2' },
 ];
 
-const EMPTY_SETTINGS = { whatsapp_number: '', bank_name: '', account_number: '', account_name: '' };
-
 const headingStyle = { fontFamily: 'var(--font-display)', fontSize: '18px', letterSpacing: '0.06em' };
 const smallLabelStyle = { fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' };
 
-export default function OrdersPanel() {
+// onOrdersChange lets the sidebar keep its new-orders badge in sync
+export default function OrdersPanel({ onOrdersChange }) {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [settings, setSettings] = useState(EMPTY_SETTINGS);
-  const [isSavingSettings, setIsSavingSettings] = useState(false);
-  const [settingsNotice, setSettingsNotice] = useState('');
 
   const loadAll = async () => {
     setIsLoading(true);
     setLoadError('');
     try {
-      const [orderList, checkoutSettings] = await Promise.all([fetchOrders(), fetchCheckoutSettings()]);
-      setOrders(orderList);
-      setSettings({ ...EMPTY_SETTINGS, ...checkoutSettings });
+      setOrders(await fetchOrders());
     } catch (err) {
       setLoadError(err.message);
     } finally {
@@ -43,6 +37,10 @@ export default function OrdersPanel() {
     loadAll();
   }, []);
 
+  useEffect(() => {
+    if (onOrdersChange) onOrdersChange(orders);
+  }, [orders]);
+
   const handleStatusChange = async (orderId, status) => {
     try {
       const updated = await updateOrderStatus(orderId, status);
@@ -52,60 +50,11 @@ export default function OrdersPanel() {
     }
   };
 
-  const handleSaveSettings = async (e) => {
-    e.preventDefault();
-    setIsSavingSettings(true);
-    setSettingsNotice('');
-    try {
-      const saved = await saveCheckoutSettings(settings);
-      setSettings({ ...EMPTY_SETTINGS, ...saved });
-      setSettingsNotice('✓ Saved. Customers will see these details after ordering.');
-    } catch (err) {
-      setSettingsNotice(`Not saved: ${err.message}`);
-    } finally {
-      setIsSavingSettings(false);
-    }
-  };
-
   const visibleOrders = statusFilter === 'all' ? orders : orders.filter((o) => o.status === statusFilter);
   const newCount = orders.filter((o) => o.status === 'new').length;
 
   return (
     <div className="dashboard-panel">
-      {/* Payment & WhatsApp details shown to customers after ordering */}
-      <form onSubmit={handleSaveSettings} style={{ border: '1px solid var(--border-light)', padding: '20px', borderRadius: '3px', marginBottom: '32px', background: '#FAFAFA' }}>
-        <h2 style={headingStyle}>PAYMENT & WHATSAPP DETAILS</h2>
-        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 16px' }}>
-          Shown to customers after they place an order. Orders are sent to this WhatsApp number.
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
-          {[
-            ['whatsapp_number', 'WhatsApp number', '08031234567'],
-            ['bank_name', 'Bank name', 'e.g. GTBank'],
-            ['account_number', 'Account number', '0123456789'],
-            ['account_name', 'Account name', 'SwissMax Beauty Grp Ltd'],
-          ].map(([key, label, placeholder]) => (
-            <div key={key}>
-              <label className="form-label" htmlFor={`checkout-${key}`}>{label}</label>
-              <input
-                id={`checkout-${key}`}
-                className="form-input"
-                placeholder={placeholder}
-                value={settings[key]}
-                onChange={(e) => setSettings({ ...settings, [key]: e.target.value })}
-              />
-            </div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '16px', flexWrap: 'wrap' }}>
-          <button type="submit" className="btn-save" disabled={isSavingSettings} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px' }}>
-            {isSavingSettings ? <Loader2 size={14} className="spinning" /> : <Save size={14} />}
-            {isSavingSettings ? 'SAVING…' : 'SAVE DETAILS'}
-          </button>
-          {settingsNotice && <span style={{ fontSize: '12px', fontWeight: '600' }}>{settingsNotice}</span>}
-        </div>
-      </form>
-
       {/* Orders list */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '18px' }}>
         <div>

@@ -9,6 +9,12 @@ export const CURRENCY_RATES = {
   CHF: { symbol: 'CHF ', rate: 1 / 1750, label: 'CHF Fr' },
 };
 
+// Product badge options; must match PRODUCT_TAG_CHOICES in products/models.py
+export const PRODUCT_TAGS = ['New', 'Limited Edition', 'Sale'];
+
+// CSS modifier for a tag badge, e.g. 'Limited Edition' -> 'tag-limited-edition'
+export const tagClassName = (tag) => `tag-${tag.toLowerCase().replace(/\s+/g, '-')}`;
+
 export const formatCurrency = (amount, currency = 'NGN') => {
   const { symbol, rate } = CURRENCY_RATES[currency] || CURRENCY_RATES.NGN;
   const converted = amount * rate;

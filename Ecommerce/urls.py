@@ -50,6 +50,7 @@ urlpatterns = [
     path("api/orders/", api_views.list_orders, name="api_list_orders"),
     path("api/orders/<uuid:order_id>/status/", api_views.update_order_status, name="api_update_order_status"),
     path("api/checkout-settings/", api_views.checkout_settings, name="api_checkout_settings"),
+    path("api/store-contact/", api_views.get_store_contact, name="api_store_contact"),
 ]
 
 

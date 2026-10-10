@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from django.db import transaction
-from products.models import Product, Category, ProductImage
+from products.models import Product, Category, ProductImage, PRODUCT_TAG_CHOICES
 from home.models import HeroBanner
 from orders.models import CheckoutSettings, Order, OrderItem, generate_order_reference, normalize_whatsapp_number
 from Ecommerce.supabase_storage import upload_to_supabase
@@ -296,6 +296,7 @@ def get_products(request):
             'description': p.product_description,
             'category_name': p.category.category_name if p.category else 'Uncategorized',
             'category_slug': p.category.slug if p.category else '',
+            'tag': p.tag,
             'image': main_img,
             'images': images,
         })
@@ -316,9 +317,12 @@ def create_product(request):
     category_slug = request.POST.get('category', '').strip()
     image_file = request.FILES.get('image')
     image_url = request.POST.get('image_url', '').strip()
+    tag = request.POST.get('tag', '').strip()
 
     if not name:
         return JsonResponse({'error': 'Name is required'}, status=400)
+    if tag and tag not in dict(PRODUCT_TAG_CHOICES):
+        return JsonResponse({'error': 'Invalid tag.'}, status=400)
 
     category = None
     if category_slug:
@@ -340,7 +344,8 @@ def create_product(request):
             product_name=name,
             category=category,
             price=price_int,
-            product_description=desc
+            product_description=desc,
+            tag=tag,
         )
 
         if image_file:
@@ -365,6 +370,7 @@ def create_product(request):
             'description': product.product_description,
             'category_name': product.category.category_name,
             'category_slug': product.category.slug,
+            'tag': product.tag,
             'image': image_field_url(first_img.image) if first_img else image_url
         }
     })
@@ -395,6 +401,11 @@ def update_product(request, product_id):
         cat = Category.objects.filter(slug=request.POST['category']).first()
         if cat:
             product.category = cat
+    if 'tag' in request.POST:
+        tag = request.POST['tag'].strip()
+        if tag and tag not in dict(PRODUCT_TAG_CHOICES):
+            return JsonResponse({'error': 'Invalid tag.'}, status=400)
+        product.tag = tag
 
     product.save()
 
@@ -430,6 +441,7 @@ def update_product(request, product_id):
             'description': product.product_description,
             'category_name': product.category.category_name,
             'category_slug': product.category.slug,
+            'tag': product.tag,
             'image': image_field_url(first_img.image) if first_img else ''
         }
     })
@@ -695,3 +707,9 @@ def checkout_settings(request):
         return JsonResponse({'error': 'GET or POST required'}, status=405)
 
     return JsonResponse({'status': 'success', 'settings': checkout_settings_to_dict(current)})
+
+
+def get_store_contact(request):
+    """Public: the WhatsApp number shoppers can message. Bank details stay out of public responses."""
+    current = CheckoutSettings.objects.first()
+    return JsonResponse({'status': 'success', 'whatsapp_number': current.whatsapp_number if current else ''})

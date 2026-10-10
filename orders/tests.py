@@ -117,3 +117,15 @@ class NormalizeWhatsappNumberTests(TestCase):
         self.assertEqual(normalize_whatsapp_number("+234 803-123-4567"), "2348031234567")
         self.assertEqual(normalize_whatsapp_number("2348031234567"), "2348031234567")
         self.assertEqual(normalize_whatsapp_number(""), "")
+
+
+class StoreContactTests(TestCase):
+    def test_public_contact_exposes_only_whatsapp_number(self):
+        self.assertEqual(self.client.get("/api/store-contact/").json()["whatsapp_number"], "")
+        self.assertEqual(CheckoutSettings.objects.count(), 0, "a public GET must not create rows")
+
+        CheckoutSettings.objects.create(whatsapp_number="2348031234567", bank_name="GTBank",
+                                        account_number="0123456789", account_name="SwissMax")
+        data = self.client.get("/api/store-contact/").json()
+        self.assertEqual(data["whatsapp_number"], "2348031234567")
+        self.assertNotIn("0123456789", json.dumps(data))
