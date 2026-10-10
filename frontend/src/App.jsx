@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TopAnnouncementBar from './components/TopAnnouncementBar';
 import Header from './components/Header';
 import HeroSplitSection from './components/HeroSplitSection';
@@ -32,11 +32,43 @@ import {
 
 import { INITIAL_BANNER, INITIAL_CATEGORIES } from './data/initialData';
 
+const ADMIN_TABS = ['hero', 'categories', 'products', 'orders', 'payments'];
+
+// /admin and /admin/<tab> are the dashboard; every other path is the storefront
+function parsePath(pathname) {
+  const match = pathname.replace(/\/+$/, '').match(/^\/admin(?:\/([a-z]+))?$/);
+  if (!match) return { view: 'store', tab: 'hero' };
+  return { view: 'dashboard', tab: ADMIN_TABS.includes(match[1]) ? match[1] : 'hero' };
+}
+
 export default function App() {
-  const [currentView, setCurrentView] = useState('store'); // 'store' | 'dashboard'
+  // The address bar is the source of truth for which page is showing
+  const [route, setRoute] = useState(() => parsePath(window.location.pathname));
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   // Only a stored backend token counts as logged in; the backend still verifies it on every save
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => Boolean(getStoredAdminAuth()));
+
+  // The dashboard only renders for a logged-in admin; /admin while logged out shows the store plus the login
+  const currentView = route.view === 'dashboard' && isAdminAuthenticated ? 'dashboard' : 'store';
+
+  const navigate = (path, { replace = false } = {}) => {
+    if (window.location.pathname !== path) {
+      window.history[replace ? 'replaceState' : 'pushState']({}, '', path);
+    }
+    setRoute(parsePath(path));
+  };
+
+  // Back/Forward buttons
+  useEffect(() => {
+    const onPopState = () => setRoute(parsePath(window.location.pathname));
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  // Visiting /admin while logged out opens the login
+  useEffect(() => {
+    if (route.view === 'dashboard' && !isAdminAuthenticated) setIsAdminModalOpen(true);
+  }, [route.view, isAdminAuthenticated]);
 
   const [banner, setBanner] = useState(INITIAL_BANNER);
   const [categories, setCategories] = useState(INITIAL_CATEGORIES);
@@ -75,6 +107,17 @@ export default function App() {
     }
     loadData();
   }, []);
+
+  // Switching between store and dashboard (e.g. the footer Staff link) starts at the top of the page.
+  // Skips the first render so a refresh keeps the browser's restored scroll position.
+  const isFirstViewRender = useRef(true);
+  useEffect(() => {
+    if (isFirstViewRender.current) {
+      isFirstViewRender.current = false;
+      return;
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [currentView]);
 
   // Save cart to local storage
   useEffect(() => {
@@ -115,21 +158,16 @@ export default function App() {
     setCart([]);
   };
 
-  // Check for ?admin=true query parameter
+  // Old shortcut: /?admin=true now redirects to /admin
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('admin') === 'true') {
-      if (isAdminAuthenticated) {
-        setCurrentView('dashboard');
-      } else {
-        setIsAdminModalOpen(true);
-      }
+    if (new URLSearchParams(window.location.search).get('admin') === 'true') {
+      navigate('/admin', { replace: true });
     }
-  }, [isAdminAuthenticated]);
+  }, []);
 
   const handleOpenAdminStudio = () => {
     if (isAdminAuthenticated) {
-      setCurrentView('dashboard');
+      navigate('/admin');
     } else {
       setIsAdminModalOpen(true);
     }
@@ -138,14 +176,14 @@ export default function App() {
   const handleLogoutAdmin = () => {
     clearStoredAdminAuth();
     setIsAdminAuthenticated(false);
-    setCurrentView('store');
+    navigate('/');
   };
 
   // Backend rejected the admin token (expired/invalid): log out and ask for a fresh login
   useEffect(() => {
     const onSessionExpired = () => {
+      // Stay on the admin address so logging back in returns to the same page
       setIsAdminAuthenticated(false);
-      setCurrentView('store');
       setIsAdminModalOpen(true);
     };
     window.addEventListener(ADMIN_SESSION_EXPIRED_EVENT, onSessionExpired);
@@ -239,7 +277,7 @@ export default function App() {
             activeCategory={activeCategory}
             onSelectCategory={setActiveCategory}
             currentView={currentView}
-            onToggleView={setCurrentView}
+            onToggleView={(view) => navigate(view === 'dashboard' ? '/admin' : '/')}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             whatsappNumber={storeWhatsApp}
@@ -258,7 +296,9 @@ export default function App() {
           onUpdateProduct={handleUpdateProduct}
           onAddProduct={handleAddProduct}
           onDeleteProduct={handleDeleteProduct}
-          onBackToStore={() => setCurrentView('store')}
+          onBackToStore={() => navigate('/')}
+          activeTab={route.tab}
+          onTabChange={(tab) => navigate(`/admin/${tab}`)}
           onLogoutAdmin={handleLogoutAdmin}
         />
       ) : (
@@ -337,10 +377,14 @@ export default function App() {
       {/* Luxury Split-Card Admin Login Modal */}
       <AdminLoginModal
         isOpen={isAdminModalOpen}
-        onClose={() => setIsAdminModalOpen(false)}
-        onLoginSuccess={(user) => {
+        onClose={() => {
+          setIsAdminModalOpen(false);
+          // Closing the login without signing in leaves the admin address
+          if (!getStoredAdminAuth() && route.view === 'dashboard') navigate('/', { replace: true });
+        }}
+        onLoginSuccess={() => {
           setIsAdminAuthenticated(true);
-          setCurrentView('dashboard');
+          if (route.view !== 'dashboard') navigate('/admin');
         }}
       />
     </div>

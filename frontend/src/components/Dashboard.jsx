@@ -35,12 +35,17 @@ export default function Dashboard({
   products,
   onUpdateProduct,
   onAddProduct,
+  activeTab: routeTab,
+  onTabChange,
   onDeleteProduct,
   onBackToStore,
   onLogoutAdmin
 }) {
 
-  const [activeTab, setActiveTab] = useState('hero'); // 'hero' | 'categories' | 'products' | 'orders' | 'payments'
+  // The current page comes from the URL when App provides it (/admin/orders etc.)
+  const [localTab, setLocalTab] = useState('hero'); // 'hero' | 'categories' | 'products' | 'orders' | 'payments'
+  const activeTab = routeTab ?? localTab;
+  const setActiveTab = onTabChange ?? setLocalTab;
   const [newOrderCount, setNewOrderCount] = useState(0);
 
   // Sidebar badge; load errors are shown on the Orders page itself
