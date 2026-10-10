@@ -173,11 +173,51 @@ export default function Dashboard({
     setTimeout(() => setSavingNotice(''), 4000);
   };
 
-  // Handle Category Image change
-  const handleCategoryImageUpload = async (catSlug, file) => {
-    if (file) {
-      const uploadedUrl = await uploadMediaFile(file);
-      onUpdateCategory(catSlug, { image: uploadedUrl });
+  // Category edits stay as drafts until that card's Save button is pressed
+  const [categoryDrafts, setCategoryDrafts] = useState({});
+  const [categoryStatus, setCategoryStatus] = useState({});
+
+  const draftFor = (cat) => ({
+    image: cat.image || '',
+    description: cat.description || '',
+    file: null,
+    previewUrl: '',
+    ...(categoryDrafts[cat.slug] || {}),
+  });
+
+  const setCategoryDraft = (slug, patch) => {
+    setCategoryDrafts((prev) => ({ ...prev, [slug]: { ...(prev[slug] || {}), ...patch } }));
+    setCategoryStatus((prev) => ({ ...prev, [slug]: undefined }));
+  };
+
+  const isCategoryDirty = (cat) => {
+    const d = categoryDrafts[cat.slug];
+    if (!d) return false;
+    return Boolean(d.file)
+      || (d.image !== undefined && d.image !== (cat.image || ''))
+      || (d.description !== undefined && d.description !== (cat.description || ''));
+  };
+
+  const handleCategoryFileChosen = (slug, file) => {
+    if (!file) return;
+    const previous = categoryDrafts[slug]?.previewUrl;
+    if (previous) URL.revokeObjectURL(previous);
+    setCategoryDraft(slug, { file, previewUrl: URL.createObjectURL(file) });
+  };
+
+  const handleSaveCategory = async (cat) => {
+    const d = draftFor(cat);
+    setCategoryStatus((prev) => ({ ...prev, [cat.slug]: { state: 'saving' } }));
+    try {
+      await onUpdateCategory(cat.slug, { description: d.description, image: d.image, imageFile: d.file });
+      if (d.previewUrl) URL.revokeObjectURL(d.previewUrl);
+      setCategoryDrafts((prev) => {
+        const { [cat.slug]: _saved, ...rest } = prev;
+        return rest;
+      });
+      setCategoryStatus((prev) => ({ ...prev, [cat.slug]: { state: 'saved' } }));
+    } catch (err) {
+      setCategoryStatus((prev) => ({ ...prev, [cat.slug]: { state: 'error', message: err.message } }));
     }
   };
 
@@ -607,56 +647,84 @@ export default function Dashboard({
               MAIN PRODUCT CATEGORIES (SKINCARE, COSMETICS, PERFUME)
             </h2>
             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-              Change the cover imagery and descriptive taglines for the three flagship disciplines.
+              Change the cover image and tagline for each category, then press <strong>Save changes</strong> on that card.
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-              {categories.map((cat) => (
-                <div key={cat.slug} style={{ border: '1px solid var(--border-light)', padding: '18px', borderRadius: '2px', background: '#FAFAFA' }}>
-                  <img
-                    src={cat.image}
-                    alt={cat.name}
-                    style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '2px', marginBottom: '14px' }}
-                  />
-
-                  <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>
-                    {cat.name}
-                  </h3>
-
-                  <div className="form-group" style={{ marginBottom: '12px' }}>
-                    <label className="form-label" style={{ fontSize: '10px' }}>Upload Image:</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleCategoryImageUpload(cat.slug, e.target.files[0])}
-                      className="form-input"
-                      style={{ padding: '6px', fontSize: '11px' }}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
+              {categories.map((cat) => {
+                const draft = draftFor(cat);
+                const dirty = isCategoryDirty(cat);
+                const status = categoryStatus[cat.slug];
+                const saving = status?.state === 'saving';
+                return (
+                  <div key={cat.slug} style={{ border: `1px solid ${dirty ? 'var(--color-gold)' : 'var(--border-light)'}`, padding: '18px', borderRadius: '6px', background: '#FAFAFA' }}>
+                    <img
+                      src={draft.previewUrl || draft.image}
+                      alt={cat.name}
+                      style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '2px', marginBottom: '14px', background: '#EEE' }}
                     />
-                  </div>
 
-                  <div className="form-group" style={{ marginBottom: '12px' }}>
-                    <label className="form-label" style={{ fontSize: '10px' }}>Or Image URL:</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={cat.image}
-                      onChange={(e) => onUpdateCategory(cat.slug, { image: e.target.value })}
-                      style={{ fontSize: '11px' }}
-                    />
-                  </div>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '6px' }}>
+                      {cat.name}
+                    </h3>
 
-                  <div className="form-group" style={{ marginBottom: '0' }}>
-                    <label className="form-label" style={{ fontSize: '10px' }}>Tagline Description:</label>
-                    <textarea
-                      rows={2}
-                      className="form-textarea"
-                      value={cat.description}
-                      onChange={(e) => onUpdateCategory(cat.slug, { description: e.target.value })}
-                      style={{ fontSize: '11px' }}
-                    />
+                    <div className="form-group" style={{ marginBottom: '12px' }}>
+                      <label className="form-label" style={{ fontSize: '10px' }}>Upload Image:</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleCategoryFileChosen(cat.slug, e.target.files[0])}
+                        className="form-input"
+                        style={{ padding: '6px', fontSize: '11px' }}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '12px' }}>
+                      <label className="form-label" style={{ fontSize: '10px' }}>Or Image URL:</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={draft.file ? '' : draft.image}
+                        placeholder={draft.file ? 'Using the uploaded file' : ''}
+                        disabled={Boolean(draft.file)}
+                        onChange={(e) => setCategoryDraft(cat.slug, { image: e.target.value })}
+                        style={{ fontSize: '11px' }}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '14px' }}>
+                      <label className="form-label" style={{ fontSize: '10px' }}>Tagline Description:</label>
+                      <textarea
+                        rows={2}
+                        className="form-textarea"
+                        value={draft.description}
+                        onChange={(e) => setCategoryDraft(cat.slug, { description: e.target.value })}
+                        style={{ fontSize: '11px' }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="btn-save"
+                        disabled={!dirty || saving}
+                        onClick={() => handleSaveCategory(cat)}
+                        style={{ padding: '9px 18px', display: 'flex', alignItems: 'center', gap: '6px', opacity: !dirty || saving ? 0.55 : 1 }}
+                      >
+                        {saving ? <Loader2 size={14} className="spinning" /> : <Save size={14} />}
+                        {saving ? 'SAVING…' : 'SAVE CHANGES'}
+                      </button>
+                      {dirty && !saving && <span style={{ fontSize: '11px', color: '#B26A00', fontWeight: '600' }}>Unsaved changes</span>}
+                      {!dirty && status?.state === 'saved' && <span style={{ fontSize: '11px', color: '#2E7D32', fontWeight: '600' }}>✓ Saved</span>}
+                    </div>
+                    {status?.state === 'error' && (
+                      <div style={{ marginTop: '10px', background: '#FDECEA', color: '#B3261E', fontSize: '12px', padding: '8px 10px', borderRadius: '2px' }}>
+                        Not saved: {status.message}
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

@@ -8,6 +8,8 @@ class Category(BaseModel):
     slug = models.SlugField(unique=True, null=True, blank=True)
     # Holds either a local file path or a full Supabase/external URL (which can exceed 100 chars)
     category_image = models.ImageField(upload_to="categories", max_length=500)
+    # Short tagline shown under the category on the storefront
+    description = models.TextField(blank=True, default="")
 
     def save(self, *args, **kwargs):
         self.slug = slugify(self.category_name)

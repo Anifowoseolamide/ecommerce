@@ -170,3 +170,37 @@ class ProductTagTests(TestCase):
         uid = self.create(tag="Sale").json()["product"]["id"]
         self.client.post(f"/api/products/update/{uid}/", {"name": "Renamed"}, **auth_header(self.admin))
         self.assertEqual(Product.objects.get(uid=uid).tag, "Sale")
+
+
+class CategoryUpdateApiTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user("admin", password="pw-123456", is_staff=True)
+        self.category = Category.objects.get(slug="skincare")
+        self.url = f"/api/categories/update/{self.category.uid}/"
+
+    def post(self, data):
+        return self.client.post(self.url, data, **auth_header(self.admin))
+
+    def test_image_link_and_tagline_are_saved_and_listed(self):
+        res = self.post({"image_url": SUPABASE_URL, "description": "  Original products you can trust.  "})
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json()["category"]["image"], SUPABASE_URL)
+
+        listed = {c["slug"]: c for c in self.client.get("/api/categories/").json()["categories"]}
+        self.assertEqual(listed["skincare"]["image"], SUPABASE_URL)
+        self.assertEqual(listed["skincare"]["description"], "Original products you can trust.")
+
+    def test_non_http_image_link_is_rejected(self):
+        res = self.post({"image_url": "data:image/png;base64,AAAA"})
+        self.assertEqual(res.status_code, 400)
+        self.category.refresh_from_db()
+        self.assertFalse(self.category.category_image)
+
+    def test_update_without_fields_keeps_existing_values(self):
+        self.post({"image_url": SUPABASE_URL, "description": "Keep me"})
+        self.post({})
+        self.category.refresh_from_db()
+        self.assertEqual((str(self.category.category_image), self.category.description), (SUPABASE_URL, "Keep me"))
+
+    def test_requires_admin_token(self):
+        self.assertEqual(self.client.post(self.url, {"description": "x"}).status_code, 401)

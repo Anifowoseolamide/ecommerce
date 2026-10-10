@@ -229,6 +229,7 @@ def get_categories(request):
             'name': c.category_name,
             'slug': c.slug,
             'image': img_url,
+            'description': c.description,
             'product_count': c.products.count()
         })
     return JsonResponse({'status': 'success', 'categories': data})
@@ -253,8 +254,16 @@ def update_category(request, category_id):
             category.category_image = supabase_url
         else:
             category.category_image = f
+    elif request.POST.get('image_url', '').strip():
+        # A link pasted in the dashboard (or an already-uploaded file's URL)
+        image_url = request.POST['image_url'].strip()
+        if not (image_url.startswith('http://') or image_url.startswith('https://')):
+            return JsonResponse({'error': 'The image link must start with http:// or https://'}, status=400)
+        category.category_image = image_url
     if 'category_name' in request.POST:
         category.category_name = request.POST['category_name']
+    if 'description' in request.POST:
+        category.description = request.POST['description'].strip()[:1000]
     category.save()
 
     return JsonResponse({
@@ -263,7 +272,8 @@ def update_category(request, category_id):
             'id': str(category.uid),
             'name': category.category_name,
             'slug': category.slug,
-            'image': image_field_url(category.category_image)
+            'image': image_field_url(category.category_image),
+            'description': category.description,
         }
     })
 

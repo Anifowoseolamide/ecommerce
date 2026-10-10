@@ -134,7 +134,7 @@ export async function fetchCategoriesData() {
           name: c.name,
           slug: c.slug,
           image: c.image || (INITIAL_CATEGORIES.find(ic => ic.slug === c.slug)?.image),
-          description: INITIAL_CATEGORIES.find(ic => ic.slug === c.slug)?.description || '',
+          description: c.description || INITIAL_CATEGORIES.find(ic => ic.slug === c.slug)?.description || '',
           product_count: c.product_count || 0
         }));
         localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(formatted));
@@ -302,24 +302,31 @@ export async function updateProductOnBackend(productId, updates, imageFile = nul
   return null;
 }
 
-export async function updateCategoryOnBackend(categoryId, name, imageFile = null) {
-  try {
-    const formData = new FormData();
-    if (name) formData.append('category_name', name);
-    if (imageFile) formData.append('image', imageFile);
+// Saves a category's tagline and image (a File to upload, or an http(s) link). Throws on failure.
+export async function updateCategoryOnBackend(categoryId, { description, image } = {}, imageFile = null) {
+  const formData = new FormData();
+  if (description !== undefined) formData.append('description', description);
+  if (imageFile) {
+    formData.append('image', imageFile);
+  } else if (image) {
+    formData.append('image_url', image);
+  }
 
-    const res = await adminFetch(`${API_BASE}/api/categories/update/${categoryId}/`, {
+  let res;
+  try {
+    res = await adminFetch(`${API_BASE}/api/categories/update/${categoryId}/`, {
       method: 'POST',
       body: formData,
     });
-    if (res.ok) {
-      const data = await res.json();
-      return data.category;
-    }
   } catch (e) {
-    console.error('Failed to update category on backend:', e);
+    throw new Error('Could not reach the server. Check your connection and try again.');
   }
-  return null;
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.category) {
+    throw new Error(data.error || `Server error (${res.status}). Please try again.`);
+  }
+  return data.category;
 }
 
 export async function deleteProductOnBackend(productId) {

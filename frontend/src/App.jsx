@@ -18,7 +18,6 @@ import {
   fetchStoreContact,
   saveBannerData,
   fetchCategoriesData,
-  saveCategoriesData,
   fetchProductsData,
   saveProductsData,
   createProductOnBackend,
@@ -196,17 +195,23 @@ export default function App() {
     setBanner(saved);
   };
 
-  const handleUpdateCategory = async (catSlug, updates) => {
-    const updated = categories.map(c => c.slug === catSlug ? { ...c, ...updates } : c);
-    setCategories(updated);
-
-    // Also persist to backend using the category's uuid id
-    const cat = updated.find(c => c.slug === catSlug);
-    if (cat && cat.id) {
-      await updateCategoryOnBackend(cat.id, cat.name, updates.imageFile || null);
+  // Saves to the backend first and throws on failure, so the dashboard never shows an edit that wasn't stored
+  const handleUpdateCategory = async (catSlug, { description, image, imageFile }) => {
+    const cat = categories.find(c => c.slug === catSlug);
+    // Built-in fallback categories have ids like 'cat-1'; real ones are UUIDs
+    if (!cat || !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(cat.id))) {
+      throw new Error('This category is not on the server yet. Reload the page and try again.');
     }
 
-    await saveCategoriesData(updated);
+    await updateCategoryOnBackend(
+      cat.id,
+      { description, image: image !== cat.image ? image : undefined },
+      imageFile || null
+    );
+
+    // Re-read from the server so what's shown is what was stored
+    const fresh = await fetchCategoriesData();
+    setCategories(fresh);
   };
 
   const handleUpdateProduct = async (productId, updates) => {
