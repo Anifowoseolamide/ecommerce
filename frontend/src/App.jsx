@@ -69,9 +69,38 @@ export default function App() {
     if (route.view === 'dashboard' && !isAdminAuthenticated) setIsAdminModalOpen(true);
   }, [route.view, isAdminAuthenticated]);
 
-  const [banner, setBanner] = useState(INITIAL_BANNER);
-  const [categories, setCategories] = useState(INITIAL_CATEGORIES);
-  const [products, setProducts] = useState([]);
+  const [banner, setBanner] = useState(() => {
+    try {
+      const local = localStorage.getItem('swissmax_banner_data');
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (parsed && (parsed.slides?.length || parsed.title)) return parsed;
+      }
+    } catch (e) {}
+    return INITIAL_BANNER;
+  });
+
+  const [categories, setCategories] = useState(() => {
+    try {
+      const local = localStorage.getItem('swissmax_categories_data');
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return INITIAL_CATEGORIES;
+  });
+
+  const [products, setProducts] = useState(() => {
+    try {
+      const local = localStorage.getItem('swissmax_products_data_v2');
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [];
+  });
   
   const [currency, setCurrency] = useState('NGN');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -89,20 +118,28 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [storeWhatsApp, setStoreWhatsApp] = useState('');
 
+  const [isInitialLoading, setIsInitialLoading] = useState(() => {
+    return !localStorage.getItem('swissmax_products_data_v2');
+  });
+
   // Load backend/persisted data on startup
   useEffect(() => {
     // Independent of the catalog load so the chat button isn't held up by it
     fetchStoreContact().then((contact) => setStoreWhatsApp(contact.whatsapp_number));
 
     async function loadData() {
-      const bannerData = await fetchBannerData();
-      if (bannerData) setBanner(bannerData);
+      try {
+        const bannerData = await fetchBannerData();
+        if (bannerData) setBanner(bannerData);
 
-      const catData = await fetchCategoriesData();
-      if (catData && catData.length > 0) setCategories(catData);
+        const catData = await fetchCategoriesData();
+        if (catData && catData.length > 0) setCategories(catData);
 
-      const prodData = await fetchProductsData();
-      if (Array.isArray(prodData)) setProducts(prodData);
+        const prodData = await fetchProductsData();
+        if (Array.isArray(prodData)) setProducts(prodData);
+      } finally {
+        setIsInitialLoading(false);
+      }
     }
     loadData();
   }, []);
@@ -333,6 +370,7 @@ export default function App() {
             onAddToCart={handleAddToCart}
             onQuickView={setSelectedProduct}
             searchQuery={searchQuery}
+            isLoading={isInitialLoading}
           />
 
           {/* 6. Swiss Alpine Cellular Heritage (Rich Visual Section) */}

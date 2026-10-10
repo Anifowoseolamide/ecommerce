@@ -9,7 +9,8 @@ export default function ProductGrid({
   currency,
   onAddToCart,
   onQuickView,
-  searchQuery
+  searchQuery,
+  isLoading
 }) {
   const [sortBy, setSortBy] = useState('featured');
 
@@ -92,6 +93,17 @@ export default function ProductGrid({
                 onAddToCart={onAddToCart}
                 onQuickView={onQuickView}
               />
+            ))}
+          </div>
+        ) : isLoading ? (
+          <div className="product-grid">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} style={{ border: '1px solid var(--border-light)', background: '#FAFAFA', minHeight: '340px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', opacity: 0.5 }}>
+                <div style={{ width: '100%', height: '220px', background: '#EAEAEA', borderRadius: '2px' }} />
+                <div style={{ width: '35%', height: '10px', background: '#E0E0E0', borderRadius: '2px' }} />
+                <div style={{ width: '70%', height: '16px', background: '#E5E5E5', borderRadius: '2px' }} />
+                <div style={{ width: '30%', height: '14px', background: '#E0E0E0', borderRadius: '2px', marginTop: 'auto' }} />
+              </div>
             ))}
           </div>
         ) : (

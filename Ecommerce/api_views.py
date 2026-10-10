@@ -69,12 +69,11 @@ def banner_to_dict(banner):
     if banner.right_banner_image:
         right_img = banner.right_banner_image.url
 
-    # Query all active HeroBanner records to generate dynamic slides
     active_banners = HeroBanner.objects.filter(is_active=True).order_by('create_at')
     slides = []
     for idx, b in enumerate(active_banners):
-        b_left = b.left_banner_image.url if b.left_banner_image else (b.left_banner_url or 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=85')
-        b_right = b.right_banner_image.url if b.right_banner_image else (b.right_banner_url or 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=1200&q=85')
+        b_left = b.left_banner_url or (b.left_banner_image.url if b.left_banner_image else 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=85')
+        b_right = b.right_banner_url or (b.right_banner_image.url if b.right_banner_image else 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=1200&q=85')
         slides.append({
             'id': str(b.uid),
             'title': b.title,
@@ -215,6 +214,57 @@ def update_banner(request):
             pass
 
     banner.save()
+
+    # Synchronize all rotating slides into HeroBanner models
+    raw_slides = data.get('slides')
+    if raw_slides:
+        if isinstance(raw_slides, str):
+            try:
+                slides_list = json.loads(raw_slides)
+            except Exception:
+                slides_list = []
+        elif isinstance(raw_slides, list):
+            slides_list = raw_slides
+        else:
+            slides_list = []
+
+        if isinstance(slides_list, list) and len(slides_list) > 0:
+            active_banners = list(HeroBanner.objects.filter(is_active=True).order_by('create_at'))
+            for idx, s in enumerate(slides_list):
+                s_title = s.get('title') or banner.title or "Original Manufacturer Products"
+                s_subtitle = s.get('subtitle') or banner.subtitle or ""
+                s_button = s.get('button_text') or banner.button_text or "DISCOVER"
+                s_left = s.get('left_banner_image') or s.get('left_banner_url') or ""
+                s_right = s.get('right_banner_image') or s.get('right_banner_url') or ""
+
+                if idx < len(active_banners):
+                    b = active_banners[idx]
+                    b.title = s_title
+                    b.subtitle = s_subtitle
+                    b.button_text = s_button
+                    if s_left:
+                        b.left_banner_url = s_left
+                        b.left_banner_image = None
+                    if s_right:
+                        b.right_banner_url = s_right
+                        b.right_banner_image = None
+                    b.is_active = True
+                    b.save()
+                else:
+                    HeroBanner.objects.create(
+                        title=s_title,
+                        subtitle=s_subtitle,
+                        button_text=s_button,
+                        left_banner_url=s_left,
+                        right_banner_url=s_right,
+                        is_active=True
+                    )
+            # Deactivate any banners that were removed in the dashboard
+            if len(active_banners) > len(slides_list):
+                for extra_b in active_banners[len(slides_list):]:
+                    extra_b.is_active = False
+                    extra_b.save()
+
     return JsonResponse({'status': 'success', 'banner': banner_to_dict(banner)})
 
 

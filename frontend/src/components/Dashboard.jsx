@@ -61,6 +61,23 @@ export default function Dashboard({
   );
   const [activeSlideIdx, setActiveSlideIdx] = useState(0);
 
+  // Keep slides and announcement form in sync whenever banner loads or updates
+  useEffect(() => {
+    if (banner?.slides && banner.slides.length > 0) {
+      setSlides(banner.slides);
+    }
+    if (banner) {
+      setPromoForm({
+        announcement_text: banner.announcement_text || 'Website Sale Up to 30% off',
+        announcement_link_text: banner.announcement_link_text || 'shop now',
+        countdown_days: banner.countdown_days ?? 22,
+        countdown_hours: banner.countdown_hours ?? 9,
+        countdown_minutes: banner.countdown_minutes ?? 21,
+        countdown_seconds: banner.countdown_seconds ?? 37,
+      });
+    }
+  }, [banner]);
+
   // Top Announcement & Countdown Settings
   const [promoForm, setPromoForm] = useState({
     announcement_text: banner.announcement_text || 'Website Sale Up to 30% off',

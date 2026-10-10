@@ -27,12 +27,12 @@ export const formatCurrency = (amount, currency = 'NGN') => {
 export const INITIAL_SLIDES = [
   {
     id: 'slide-1',
-    left_banner_image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=85',
-    right_banner_image: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=1200&q=85',
+    left_banner_image: 'https://buxiqvlwqkufiiwlhjlt.supabase.co/storage/v1/object/public/ecommerce-media/uploads/b55d905f79ac465a9d08f7b7701608a2.jpeg',
+    right_banner_image: 'https://buxiqvlwqkufiiwlhjlt.supabase.co/storage/v1/object/public/ecommerce-media/uploads/ee4d659a568c472a880878784a9222c1.jpeg',
     title: 'Original Manufacturer Products',
     subtitle: 'Welcome to SwissMaxBeauty. We curate iconic brands',
-    right_title: 'We Deliver Across West Africa',
-    right_eyebrow: 'Regional Supply Chain',
+    right_title: '9pm',
+    right_eyebrow: 'Limited Release',
     button_text: 'DISCOVER'
   },
   {
@@ -81,8 +81,8 @@ export const INITIAL_BANNER = {
   title: "Original Manufacturer Products",
   subtitle: "Welcome to SwissMaxBeauty. We curate iconic brands",
   button_text: "DISCOVER",
-  left_banner_image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=85",
-  right_banner_image: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=1200&q=85",
+  left_banner_image: "https://buxiqvlwqkufiiwlhjlt.supabase.co/storage/v1/object/public/ecommerce-media/uploads/b55d905f79ac465a9d08f7b7701608a2.jpeg",
+  right_banner_image: "https://buxiqvlwqkufiiwlhjlt.supabase.co/storage/v1/object/public/ecommerce-media/uploads/ee4d659a568c472a880878784a9222c1.jpeg",
   announcement_text: "We deliver across West Africa • Business Starters Privilege Up to 10% Off",
   announcement_link_text: "shop now",
   countdown_days: 22,
@@ -99,8 +99,8 @@ export const INITIAL_CATEGORIES = [
     name: "Skincare",
     slug: "skincare",
     description: "Original Manufacturer products you can trust.",
-    image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
-    product_count: 4
+    image: "https://buxiqvlwqkufiiwlhjlt.supabase.co/storage/v1/object/public/ecommerce-media/categories/72dc13609bdf4243883508a2eb3d5f9e.jpg",
+    product_count: 0
   },
   {
     id: "cat-2",
@@ -108,15 +108,15 @@ export const INITIAL_CATEGORIES = [
     slug: "cosmetics",
     description: "Luminous silk foundations, velvet matte lip formulations, and 24K gold powders.",
     image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=800&q=80",
-    product_count: 4
+    product_count: 0
   },
   {
     id: "cat-3",
     name: "Perfume",
     slug: "perfume",
     description: "Sprays, Deodorants, Oil Parfums, and Unique collection.",
-    image: "https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=800&q=80",
-    product_count: 4
+    image: "https://buxiqvlwqkufiiwlhjlt.supabase.co/storage/v1/object/public/ecommerce-media/categories/54f749aa33334a66a404a812719a5026.jpg",
+    product_count: 1
   }
 ];
 
