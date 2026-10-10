@@ -1913,6 +1913,21 @@ input, textarea, select {
     flex-grow: 0;
     overflow: visible;
   }
+  .admin-sidebar {
+    position: sticky;
+    top: 0;
+    width: 100%;
+    height: auto;
+    z-index: 100;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    background: #0b0c0e;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
   .admin-sidebar-footer {
     padding: 0 0 0 6px;
     border-top: none;
@@ -1926,5 +1941,353 @@ input, textarea, select {
   }
   .admin-main {
     padding: 16px 12px 60px;
+  }
+}
+
+/* ========================================================
+   ADMIN LOGIN MODAL RESPONSIVE STYLES
+   ======================================================== */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(9, 13, 22, 0.75);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+.admin-modal-card {
+  display: flex;
+  background: #ffffff;
+  border-radius: 24px;
+  border: 1.5px solid #eed695;
+  box-shadow: 0 25px 60px -10px rgba(0, 0, 0, 0.35);
+  width: 100%;
+  max-width: 920px;
+  min-height: 540px;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: none;
+  border: none;
+  color: #c59b27;
+  cursor: pointer;
+  z-index: 30;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.admin-modal-close:hover {
+  transform: scale(1.1);
+  background-color: rgba(197, 155, 39, 0.1);
+}
+
+.admin-modal-left {
+  flex: 0 0 44%;
+  position: relative;
+  background: linear-gradient(160deg, #a47814 0%, #c59b27 35%, #d8ac32 65%, #0a0e17 100%);
+  color: #ffffff;
+  padding: 44px 38px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  z-index: 2;
+}
+
+.admin-modal-logo {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin: 0 auto 16px auto;
+  display: block;
+  border: 3.5px solid #ffffff;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+  background-color: #090d16;
+}
+
+.admin-modal-left-title {
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.admin-modal-left-sub {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #ffffff;
+  margin: 0 0 18px 0;
+  opacity: 0.95;
+}
+
+.admin-modal-left-desc {
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #ffffff;
+  margin: 0 auto 20px auto;
+  max-width: 280px;
+}
+
+.admin-modal-left-badge {
+  font-size: 0.74rem;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+}
+
+.admin-modal-divider {
+  position: absolute;
+  right: -36px;
+  top: 0;
+  bottom: 0;
+  width: 36px;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.admin-modal-right {
+  flex: 1;
+  background: #ffffff;
+  padding: 50px 50px 40px 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.admin-modal-heading {
+  font-size: 2.1rem;
+  font-weight: 800;
+  color: #c59b27;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+}
+
+.admin-modal-subheading {
+  font-size: 0.92rem;
+  color: #453412;
+  margin: 0;
+  font-weight: 500;
+}
+
+.admin-modal-btn {
+  width: 150px;
+  background: linear-gradient(135deg, #c59b27 0%, #e0b84c 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 1.02rem;
+  padding: 12px 26px;
+  border: none;
+  border-radius: 28px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(197, 155, 39, 0.35);
+  transition: all 0.2s;
+}
+
+.admin-modal-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(197, 155, 39, 0.45);
+}
+
+@media (max-width: 768px) {
+  .admin-modal-overlay {
+    padding: 12px;
+    align-items: center;
+  }
+
+  .admin-modal-card {
+    flex-direction: column;
+    max-width: 100%;
+    min-height: auto;
+    max-height: 92vh;
+    border-radius: 18px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-modal-close {
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    color: #ffffff;
+    border-radius: 50%;
+    padding: 6px;
+    z-index: 40;
+  }
+
+  .admin-modal-left {
+    flex: none;
+    width: 100%;
+    padding: 22px 18px 18px;
+  }
+
+  .admin-modal-logo {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 8px;
+    border-width: 2.5px;
+  }
+
+  .admin-modal-left-title {
+    font-size: 1.25rem;
+    letter-spacing: 0.06em;
+  }
+
+  .admin-modal-left-sub {
+    font-size: 0.65rem;
+    margin-bottom: 0;
+    letter-spacing: 0.18em;
+  }
+
+  .admin-modal-left-desc,
+  .admin-modal-left-badge,
+  .admin-modal-divider {
+    display: none !important;
+  }
+
+  .admin-modal-right {
+    padding: 22px 18px 26px;
+  }
+
+  .admin-modal-heading {
+    font-size: 1.55rem;
+  }
+
+  .admin-modal-subheading {
+    font-size: 0.85rem;
+  }
+
+  .admin-modal-btn {
+    width: 100%;
+    padding: 13px 20px;
+  }
+}
+
+/* ========================================================
+   ADMIN STUDIO DASHBOARD RESPONSIVE UTILITIES
+   ======================================================== */
+.dash-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.dash-grid-typo {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+}
+
+.dash-grid-announcement {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.dash-countdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.dash-categories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.dash-save-btn {
+  width: auto;
+}
+
+.dash-products-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dash-modal-card {
+  background: #ffffff;
+  max-width: 520px;
+  width: 100%;
+  padding: 32px;
+  border-radius: 4px;
+  max-height: 92vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dash-form-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 860px) {
+  .dash-grid-2col,
+  .dash-grid-typo,
+  .dash-grid-announcement,
+  .dash-categories-grid {
+    grid-template-columns: 1fr !important;
+    gap: 18px !important;
+  }
+
+  .dash-countdown-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .dash-save-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 14px 20px !important;
+    font-size: 11px !important;
+  }
+
+  .dash-products-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+
+  .dash-products-header button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .dash-form-2col {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dash-modal-card {
+    padding: 22px 18px !important;
   }
 }
