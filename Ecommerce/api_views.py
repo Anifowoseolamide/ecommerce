@@ -185,11 +185,13 @@ def update_banner(request):
         banner.announcement_text = data['announcement_text']
     if 'announcement_link_text' in data and data['announcement_link_text']:
         banner.announcement_link_text = data['announcement_link_text']
-    if 'left_banner_url' in data and data['left_banner_url']:
-        banner.left_banner_url = data['left_banner_url']
+    left_url = data.get('left_banner_url') or data.get('left_banner_image')
+    if left_url:
+        banner.left_banner_url = left_url
         banner.left_banner_image = None
-    if 'right_banner_url' in data and data['right_banner_url']:
-        banner.right_banner_url = data['right_banner_url']
+    right_url = data.get('right_banner_url') or data.get('right_banner_image')
+    if right_url:
+        banner.right_banner_url = right_url
         banner.right_banner_image = None
     if 'countdown_days' in data:
         try:

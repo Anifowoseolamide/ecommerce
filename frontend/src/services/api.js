@@ -91,6 +91,13 @@ export async function saveBannerData(updatedBanner, imageFiles = {}) {
       formData.append('right_image_file', imageFiles.right_image_file);
     }
 
+    if (updatedBanner.left_banner_image && !updatedBanner.left_banner_url) {
+      formData.append('left_banner_url', updatedBanner.left_banner_image);
+    }
+    if (updatedBanner.right_banner_image && !updatedBanner.right_banner_url) {
+      formData.append('right_banner_url', updatedBanner.right_banner_image);
+    }
+
     const res = await adminFetch(`${API_BASE}/api/banners/update/`, {
       method: 'POST',
       body: formData,
@@ -98,8 +105,12 @@ export async function saveBannerData(updatedBanner, imageFiles = {}) {
     if (res.ok) {
       const data = await res.json();
       if (data.banner) {
-        localStorage.setItem(STORAGE_KEYS.BANNER, JSON.stringify(data.banner));
-        return data.banner;
+        const mergedBanner = {
+          ...data.banner,
+          slides: (updatedBanner.slides && updatedBanner.slides.length > 0) ? updatedBanner.slides : (data.banner.slides || []),
+        };
+        localStorage.setItem(STORAGE_KEYS.BANNER, JSON.stringify(mergedBanner));
+        return mergedBanner;
       }
     }
   } catch (err) {

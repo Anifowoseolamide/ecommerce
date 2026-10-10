@@ -164,6 +164,8 @@ export default function Dashboard({
       button_text: firstSlide.button_text,
       left_banner_image: firstSlide.left_banner_image,
       right_banner_image: firstSlide.right_banner_image,
+      left_banner_url: firstSlide.left_banner_image,
+      right_banner_url: firstSlide.right_banner_image,
       slides: slides
     };
     await onUpdateBanner(payload, {});
