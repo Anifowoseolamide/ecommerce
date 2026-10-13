@@ -81,8 +81,8 @@ def banner_to_dict(banner):
             'button_text': b.button_text,
             'left_banner_image': b_left,
             'right_banner_image': b_right,
-            'right_title': 'ATELIER RESERVES',
-            'right_eyebrow': 'Limited Release'
+            'right_title': b.right_title or 'ATELIER RESERVES',
+            'right_eyebrow': b.right_eyebrow or 'Limited Release'
         })
 
     if not slides:
@@ -93,8 +93,8 @@ def banner_to_dict(banner):
             'button_text': banner.button_text,
             'left_banner_image': left_img or 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=85',
             'right_banner_image': right_img or 'https://images.unsplash.com/photo-1541643600914-78b084683601?auto=format&fit=crop&w=1200&q=85',
-            'right_title': 'ATELIER RESERVES',
-            'right_eyebrow': 'Limited Release'
+            'right_title': banner.right_title or 'ATELIER RESERVES',
+            'right_eyebrow': banner.right_eyebrow or 'Limited Release'
         }]
 
     return {
@@ -102,6 +102,8 @@ def banner_to_dict(banner):
         'title': banner.title,
         'subtitle': banner.subtitle,
         'button_text': banner.button_text,
+        'right_title': banner.right_title or (slides[0]['right_title'] if slides else 'ATELIER RESERVES'),
+        'right_eyebrow': banner.right_eyebrow or (slides[0]['right_eyebrow'] if slides else 'Limited Release'),
         'left_banner_image': left_img or slides[0]['left_banner_image'],
         'right_banner_image': right_img or slides[0]['right_banner_image'],
         'slides': slides,
@@ -124,6 +126,8 @@ def get_banners(request):
             title="ICONIC BEAUTY",
             subtitle="Welcome to SwissMax Beauty — We curate iconic formulations that deserve attention.",
             button_text="DISCOVER",
+            right_title="ATELIER RESERVES",
+            right_eyebrow="Limited Release",
             announcement_text="Website Sale Up to 30% off + Free Shipping",
             announcement_link_text="shop now",
             countdown_days=22,
@@ -180,6 +184,10 @@ def update_banner(request):
         banner.subtitle = data['subtitle']
     if 'button_text' in data and data['button_text']:
         banner.button_text = data['button_text']
+    if 'right_title' in data and data['right_title'] is not None:
+        banner.right_title = data['right_title']
+    if 'right_eyebrow' in data and data['right_eyebrow'] is not None:
+        banner.right_eyebrow = data['right_eyebrow']
     if 'announcement_text' in data and data['announcement_text']:
         banner.announcement_text = data['announcement_text']
     if 'announcement_link_text' in data and data['announcement_link_text']:
@@ -234,6 +242,8 @@ def update_banner(request):
                 s_title = s.get('title') or banner.title or "Original Manufacturer Products"
                 s_subtitle = s.get('subtitle') or banner.subtitle or ""
                 s_button = s.get('button_text') or banner.button_text or "DISCOVER"
+                s_right_title = s.get('right_title') if s.get('right_title') is not None else (banner.right_title or "ATELIER RESERVES")
+                s_right_eyebrow = s.get('right_eyebrow') if s.get('right_eyebrow') is not None else (banner.right_eyebrow or "Limited Release")
                 s_left = s.get('left_banner_image') or s.get('left_banner_url') or ""
                 s_right = s.get('right_banner_image') or s.get('right_banner_url') or ""
 
@@ -242,6 +252,8 @@ def update_banner(request):
                     b.title = s_title
                     b.subtitle = s_subtitle
                     b.button_text = s_button
+                    b.right_title = s_right_title
+                    b.right_eyebrow = s_right_eyebrow
                     if s_left:
                         b.left_banner_url = s_left
                         b.left_banner_image = None
@@ -255,6 +267,8 @@ def update_banner(request):
                         title=s_title,
                         subtitle=s_subtitle,
                         button_text=s_button,
+                        right_title=s_right_title,
+                        right_eyebrow=s_right_eyebrow,
                         left_banner_url=s_left,
                         right_banner_url=s_right,
                         is_active=True

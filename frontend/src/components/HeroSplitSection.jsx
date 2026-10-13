@@ -75,10 +75,10 @@ export default function HeroSplitSection({ banner, onDiscoverClick }) {
           
           <div className="hero-content" style={{ marginLeft: 'auto', textAlign: 'right' }}>
             <span className="hero-eyebrow hero-text-fade">
-              {activeSlide.right_eyebrow || "Haute Parfumerie & Soins"}
+              {activeSlide.right_eyebrow || banner.right_eyebrow || "Haute Parfumerie & Soins"}
             </span>
             <h2 className="hero-text-fade" style={{ fontFamily: 'var(--font-display)', fontSize: '26px', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '10px' }}>
-              {activeSlide.right_title || "The Alpine Reserve"}
+              {activeSlide.right_title || banner.right_title || "The Alpine Reserve"}
             </h2>
             <button 
               className="btn-discover"

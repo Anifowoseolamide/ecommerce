@@ -81,6 +81,8 @@ export const INITIAL_BANNER = {
   title: "Original Manufacturer Products",
   subtitle: "Welcome to SwissMaxBeauty. We curate iconic brands",
   button_text: "DISCOVER",
+  right_title: "9pm",
+  right_eyebrow: "Limited Release",
   left_banner_image: "https://buxiqvlwqkufiiwlhjlt.supabase.co/storage/v1/object/public/ecommerce-media/uploads/b55d905f79ac465a9d08f7b7701608a2.jpeg",
   right_banner_image: "https://buxiqvlwqkufiiwlhjlt.supabase.co/storage/v1/object/public/ecommerce-media/uploads/ee4d659a568c472a880878784a9222c1.jpeg",
   announcement_text: "We deliver across West Africa • Business Starters Privilege Up to 10% Off",

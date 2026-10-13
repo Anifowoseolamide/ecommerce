@@ -179,6 +179,8 @@ export default function Dashboard({
       title: firstSlide.title,
       subtitle: firstSlide.subtitle,
       button_text: firstSlide.button_text,
+      right_title: firstSlide.right_title,
+      right_eyebrow: firstSlide.right_eyebrow,
       left_banner_image: firstSlide.left_banner_image,
       right_banner_image: firstSlide.right_banner_image,
       left_banner_url: firstSlide.left_banner_image,
@@ -528,7 +530,7 @@ export default function Dashboard({
                       <input
                         type="text"
                         className="form-input"
-                        value={currentSlide.title}
+                        value={currentSlide.title ?? ''}
                         onChange={(e) => handleUpdateCurrentSlide('title', e.target.value)}
                       />
                     </div>
@@ -538,7 +540,7 @@ export default function Dashboard({
                       <input
                         type="text"
                         className="form-input"
-                        value={currentSlide.subtitle}
+                        value={currentSlide.subtitle ?? ''}
                         onChange={(e) => handleUpdateCurrentSlide('subtitle', e.target.value)}
                       />
                     </div>
@@ -548,7 +550,8 @@ export default function Dashboard({
                       <input
                         type="text"
                         className="form-input"
-                        value={currentSlide.button_text || 'DISCOVER'}
+                        value={currentSlide.button_text ?? ''}
+                        placeholder="DISCOVER"
                         onChange={(e) => handleUpdateCurrentSlide('button_text', e.target.value)}
                       />
                     </div>
@@ -560,7 +563,8 @@ export default function Dashboard({
                       <input
                         type="text"
                         className="form-input"
-                        value={currentSlide.right_title || 'The Alpine Reserve'}
+                        value={currentSlide.right_title ?? ''}
+                        placeholder="The Alpine Reserve"
                         onChange={(e) => handleUpdateCurrentSlide('right_title', e.target.value)}
                       />
                     </div>
@@ -570,7 +574,8 @@ export default function Dashboard({
                       <input
                         type="text"
                         className="form-input"
-                        value={currentSlide.right_eyebrow || 'Haute Parfumerie & Soins'}
+                        value={currentSlide.right_eyebrow ?? ''}
+                        placeholder="Haute Parfumerie & Soins"
                         onChange={(e) => handleUpdateCurrentSlide('right_eyebrow', e.target.value)}
                       />
                     </div>

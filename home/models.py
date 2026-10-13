@@ -9,6 +9,8 @@ class HeroBanner(BaseModel):
         default="Welcome to SwissMax Beauty — We curate iconic formulations that deserve attention."
     )
     button_text = models.CharField(max_length=100, default="DISCOVER")
+    right_title = models.CharField(max_length=255, default="ATELIER RESERVES", blank=True)
+    right_eyebrow = models.CharField(max_length=255, default="Limited Release", blank=True)
     left_banner_image = models.ImageField(upload_to="banners", null=True, blank=True)
     left_banner_url = models.CharField(max_length=1000, null=True, blank=True)
     right_banner_image = models.ImageField(upload_to="banners", null=True, blank=True)
