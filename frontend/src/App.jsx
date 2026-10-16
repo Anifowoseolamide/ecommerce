@@ -32,7 +32,7 @@ import {
 
 import { INITIAL_BANNER, INITIAL_CATEGORIES, HERITAGE_FEATURE } from './data/initialData';
 
-const ADMIN_TABS = ['hero', 'categories', 'products', 'orders', 'payments', 'heritage'];
+const ADMIN_TABS = ['hero', 'categories', 'products', 'orders', 'payments', 'heritage', 'articles'];
 
 // /admin and /admin/<tab> are the dashboard; every other path is the storefront
 function parsePath(pathname) {
@@ -348,18 +348,18 @@ export default function App() {
             }}
           />
 
-          {/* 7. Editorial Lookbook Gallery (Images Across Disciplines) */}
-          <LookbookSection
-            onSelectCategory={setActiveCategory}
-          />
-
-          {/* 8. Authentic Brand Partners Infinite Sliding Carousel */}
+          {/* 7. Authentic Brand Partners Infinite Sliding Carousel */}
           <BrandMarqueeSection
             onSelectBrand={(brandName) => {
               setSearchQuery(brandName);
               const el = document.getElementById('catalog');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
+          />
+
+          {/* 8. Articles (Editorial Lookbook Gallery) */}
+          <LookbookSection
+            onSelectCategory={setActiveCategory}
           />
         </main>
 

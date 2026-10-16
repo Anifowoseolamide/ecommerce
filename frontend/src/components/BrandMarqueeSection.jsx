@@ -1,6 +1,6 @@
 import React from 'react';
 
-// 18 Authentic Brand Logos supplied from C:\Users\USER\Pictures\slidingimages
+// 18 authentic brand logos supplied from C:\Users\USER\Pictures\slidingimages (resized copies in /public/brands)
 const ROW_ONE_BASE = [
   { id: 'cerave', name: 'CeraVe', image: '/brands/brand-17.jpg' },
   { id: 'cosrx', name: 'COSRX', image: '/brands/brand-11.jpg' },
@@ -26,26 +26,61 @@ const ROW_TWO_BASE = [
   { id: 'and-more', name: 'and more...', isMore: true },
 ];
 
-export default function BrandMarqueeSection({ onSelectBrand }) {
-  // Exact 2x duplication ensures pixel-perfect seamless -50% infinite loop
-  const rowOneItems = [...ROW_ONE_BASE, ...ROW_ONE_BASE];
-  const rowTwoItems = [...ROW_TWO_BASE, ...ROW_TWO_BASE];
+// The track holds COPIES identical sets and slides by exactly one set (see .partner-track in index.css),
+// so the loop is seamless even on very wide screens where a single set is narrower than the viewport.
+const COPIES = 4;
 
-  const handleBrandClick = (brand) => {
+function MarqueeRow({ items, direction, label, onSelect }) {
+  return (
+    <div className="partner-row" aria-label={label}>
+      <div className={`partner-track slide-${direction}`}>
+        {Array.from({ length: COPIES }, (_, copy) =>
+          items.map((brand) => {
+            const isDuplicate = copy > 0;
+            return (
+              <div
+                key={`${copy}-${brand.id}`}
+                className={`partner-logo ${brand.isMore ? 'partner-logo-more' : ''}`}
+                role="button"
+                // Only the first copy is reachable by keyboard / screen readers
+                tabIndex={isDuplicate ? -1 : 0}
+                aria-hidden={isDuplicate ? 'true' : undefined}
+                title={brand.isMore ? 'Explore our full collection' : `Browse ${brand.name} collection`}
+                onClick={() => onSelect(brand)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelect(brand);
+                  }
+                }}
+              >
+                {brand.isMore ? (
+                  <span className="partner-more-text">and more...</span>
+                ) : (
+                  <img src={brand.image} alt={isDuplicate ? '' : brand.name} className="partner-logo-img" decoding="async" draggable="false" />
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function BrandMarqueeSection({ onSelectBrand }) {
+  const handleSelect = (brand) => {
     if (brand.isMore) {
       const catalogEl = document.getElementById('catalog');
       if (catalogEl) catalogEl.scrollIntoView({ behavior: 'smooth' });
       return;
     }
-    if (onSelectBrand) {
-      onSelectBrand(brand.name);
-    }
+    if (onSelectBrand) onSelectBrand(brand.name);
   };
 
   return (
     <section className="brand-marquee-section" id="featured-brands">
       <div className="container">
-        {/* Header styled like reference with prominent highlight */}
         <div className="brand-marquee-header">
           <span className="section-label">AUTHENTIC & CERTIFIED PARTNERS</span>
           <h2 className="brand-marquee-title">
@@ -57,66 +92,9 @@ export default function BrandMarqueeSection({ onSelectBrand }) {
         </div>
       </div>
 
-      {/* Marquee Container with smooth edge fades */}
       <div className="brand-marquee-container">
-        {/* Row 1 - Sliding Left */}
-        <div className="brand-marquee-row" aria-label="Featured Brands Row 1">
-          <div className="brand-marquee-track scroll-left">
-            {rowOneItems.map((brand, idx) => (
-              <div
-                key={`r1-${brand.id}-${idx}`}
-                className="brand-logo-card"
-                onClick={() => handleBrandClick(brand)}
-                title={`Browse ${brand.name} collection`}
-                role="button"
-                tabIndex={0}
-              >
-                <img
-                  src={brand.image}
-                  alt={brand.name}
-                  className="brand-logo-img"
-                  loading="lazy"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Row 2 - Sliding Right */}
-        <div className="brand-marquee-row" aria-label="Featured Brands Row 2">
-          <div className="brand-marquee-track scroll-right">
-            {rowTwoItems.map((brand, idx) => (
-              brand.isMore ? (
-                <div
-                  key={`r2-${brand.id}-${idx}`}
-                  className="brand-logo-card brand-logo-more"
-                  onClick={() => handleBrandClick(brand)}
-                  title="Explore our full collection"
-                  role="button"
-                  tabIndex={0}
-                >
-                  <span className="brand-more-text">and more...</span>
-                </div>
-              ) : (
-                <div
-                  key={`r2-${brand.id}-${idx}`}
-                  className="brand-logo-card"
-                  onClick={() => handleBrandClick(brand)}
-                  title={`Browse ${brand.name} collection`}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <img
-                    src={brand.image}
-                    alt={brand.name}
-                    className="brand-logo-img"
-                    loading="lazy"
-                  />
-                </div>
-              )
-            ))}
-          </div>
-        </div>
+        <MarqueeRow items={ROW_ONE_BASE} direction="left" label="Featured brands, row 1" onSelect={handleSelect} />
+        <MarqueeRow items={ROW_TWO_BASE} direction="right" label="Featured brands, row 2" onSelect={handleSelect} />
       </div>
     </section>
   );

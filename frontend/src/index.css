@@ -2293,11 +2293,12 @@ input, textarea, select {
 }
 
 /* =========================================================
-   Brand Partners Infinite Sliding Marquee Section
+   Brand Partners sliding logos
+   Logos are shown as supplied (square, white background), large and uncropped.
    ========================================================= */
 .brand-marquee-section {
   background-color: #FFFFFF;
-  padding: 64px 0 72px;
+  padding: 70px 0 80px;
   overflow: hidden;
   border-top: 1px solid var(--border-light);
   border-bottom: 1px solid var(--border-light);
@@ -2307,7 +2308,7 @@ input, textarea, select {
 .brand-marquee-header {
   text-align: center;
   max-width: 780px;
-  margin: 0 auto 40px;
+  margin: 0 auto 36px;
 }
 
 .brand-marquee-title {
@@ -2337,144 +2338,127 @@ input, textarea, select {
 .brand-marquee-container {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  position: relative;
+  gap: 8px;
   width: 100%;
   overflow: hidden;
-  /* Smooth edge gradient masks to fade logos cleanly */
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
-  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  /* Fade the logos in and out at the screen edges */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%);
 }
 
-.brand-marquee-row {
+.partner-row {
   display: flex;
   overflow: hidden;
-  user-select: none;
   width: 100%;
+  user-select: none;
 }
 
-.brand-marquee-track {
+/* Four identical sets of logos; sliding by exactly one set (25%) loops without a visible jump */
+.partner-track {
   display: flex;
   align-items: center;
-  gap: 20px;
   width: max-content;
   will-change: transform;
 }
 
-.scroll-left {
-  animation: marquee-slide-left 34s linear infinite;
+.partner-track.slide-left {
+  animation: partner-slide-left 48s linear infinite;
 }
 
-.scroll-right {
-  animation: marquee-slide-right 34s linear infinite;
+.partner-track.slide-right {
+  animation: partner-slide-right 48s linear infinite;
 }
 
-.brand-marquee-row:hover .brand-marquee-track {
+.partner-row:hover .partner-track,
+.partner-row:focus-within .partner-track {
   animation-play-state: paused;
 }
 
-/* Subtle, perfectly scaled brand cards (not too big) */
-.brand-logo-card {
+/* Spacing is a margin (not flex gap) so every set is exactly the same width */
+.partner-logo {
+  flex-shrink: 0;
+  height: 170px;
+  margin-right: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 54px;
-  min-width: 130px;
-  max-width: 150px;
-  padding: 8px 18px;
-  background: #FFFFFF;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
   cursor: pointer;
-  flex-shrink: 0;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
-              box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
-              border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #FFFFFF;
 }
 
-.brand-logo-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--color-gold-border, rgba(197, 160, 89, 0.5));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.partner-logo:focus-visible {
+  outline: 2px solid var(--color-gold, #C5A059);
+  outline-offset: -2px;
 }
 
-.brand-logo-img {
-  max-height: 36px;
-  max-width: 105px;
+.partner-logo-img {
+  display: block;
+  height: 100%;
   width: auto;
-  height: auto;
-  object-fit: contain;
-  filter: contrast(1.02);
-  transition: filter 0.2s ease, transform 0.2s ease;
+  /* Lets the logo images' white background blend into the white section */
+  mix-blend-mode: multiply;
+  /* The logo files have a very slightly off-white background; lift it to pure white so no tile edges show */
+  filter: brightness(1.05);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
 
-.brand-logo-card:hover .brand-logo-img {
-  transform: scale(1.04);
+.partner-logo:hover .partner-logo-img {
+  transform: scale(1.06);
 }
 
-.brand-logo-more {
-  background: #F8F9FA;
-  border-style: dashed;
-  cursor: pointer;
+.partner-logo-more {
+  min-width: 190px;
 }
 
-.brand-more-text {
-  font-size: 13px;
+.partner-more-text {
+  font-family: var(--font-display, 'Cinzel', serif);
+  font-size: 22px;
   font-weight: 600;
+  letter-spacing: 0.04em;
   color: var(--text-secondary, #5A5A5A);
-  letter-spacing: 0.02em;
 }
 
-@keyframes marquee-slide-left {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
+@keyframes partner-slide-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-25%); }
 }
 
-@keyframes marquee-slide-right {
-  0% {
-    transform: translateX(-50%);
-  }
-  100% {
-    transform: translateX(0);
-  }
+@keyframes partner-slide-right {
+  from { transform: translateX(-25%); }
+  to { transform: translateX(0); }
 }
 
 @media (max-width: 768px) {
   .brand-marquee-section {
-    padding: 48px 0 52px;
+    padding: 48px 0 56px;
   }
   .brand-marquee-title {
     font-size: 26px;
   }
-  .brand-marquee-container {
-    gap: 12px;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+  .partner-logo {
+    height: 120px;
+    margin-right: 8px;
   }
-  .brand-logo-card {
-    height: 46px;
-    min-width: 110px;
-    padding: 6px 14px;
-    border-radius: 5px;
+  .partner-logo-more {
+    min-width: 140px;
   }
-  .brand-logo-img {
-    max-height: 28px;
-    max-width: 85px;
+  .partner-more-text {
+    font-size: 18px;
   }
-  .brand-marquee-track {
-    gap: 14px;
-  }
-  .scroll-left {
-    animation-duration: 26s;
-  }
-  .scroll-right {
-    animation-duration: 26s;
+  .partner-track.slide-left,
+  .partner-track.slide-right {
+    animation-duration: 38s;
   }
 }
 
+/* People who ask their device for less motion get a swipeable row instead of an animation */
+@media (prefers-reduced-motion: reduce) {
+  .partner-row {
+    overflow-x: auto;
+  }
+  .partner-track.slide-left,
+  .partner-track.slide-right {
+    animation: none;
+  }
+}

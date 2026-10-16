@@ -70,3 +70,16 @@ class HeritageSetting(BaseModel):
         return f"Heritage Section ({self.title})"
 
 
+class Article(BaseModel):
+    """A card in the storefront's Articles section."""
+    title = models.CharField(max_length=255)
+    subtitle = models.CharField(max_length=255, blank=True, default="")
+    # Holds either an uploaded file path or a full image URL (which can exceed 100 chars)
+    image = models.ImageField(upload_to="articles", max_length=500)
+    position = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["position", "create_at"]
+
+    def __str__(self):
+        return self.title

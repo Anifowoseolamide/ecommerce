@@ -1,4 +1,4 @@
-import { INITIAL_BANNER, INITIAL_CATEGORIES, HERITAGE_FEATURE } from '../data/initialData';
+import { INITIAL_BANNER, INITIAL_CATEGORIES, HERITAGE_FEATURE, EDITORIAL_LOOKBOOK } from '../data/initialData';
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
@@ -7,6 +7,7 @@ const STORAGE_KEYS = {
   CATEGORIES: 'swissmax_categories_data',
   CONTACT: 'swissmax_store_contact',
   HERITAGE: 'swissmax_heritage_data',
+  ARTICLES: 'swissmax_articles_data',
 };
 
 export const ADMIN_AUTH_KEY = 'swissmax_admin_auth';
@@ -495,3 +496,65 @@ export async function saveHeritageData(updatedHeritage, imageFile = null) {
   return updatedHeritage;
 }
 
+// ---- Articles (the cards in the storefront's "Articles" section) ----
+
+// Throws on failure; used by the admin editor so a failed load is never mistaken for "no articles"
+export async function fetchArticlesOrThrow() {
+  let res;
+  try {
+    res = await fetch(`${API_BASE}/api/articles/`);
+  } catch (e) {
+    throw new Error('Could not reach the server. Check your connection and try again.');
+  }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !Array.isArray(data.articles)) {
+    throw new Error(data.error || `Server error (${res.status}). Please try again.`);
+  }
+  return data.articles;
+}
+
+// What the browser last received, so the section can render immediately; defaults before the first visit
+export function getCachedArticles() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(STORAGE_KEYS.ARTICLES));
+    if (cached && Array.isArray(cached.articles)) return cached.articles;
+  } catch (e) {}
+  return EDITORIAL_LOOKBOOK;
+}
+
+// Storefront: latest articles from the server, falling back to the cached copy if it's unreachable
+export async function fetchArticles() {
+  try {
+    const articles = await fetchArticlesOrThrow();
+    localStorage.setItem(STORAGE_KEYS.ARTICLES, JSON.stringify({ articles }));
+    return articles;
+  } catch (e) {
+    return getCachedArticles();
+  }
+}
+
+function articleFormData({ title, subtitle, image }, imageFile) {
+  const formData = new FormData();
+  if (title !== undefined) formData.append('title', title);
+  if (subtitle !== undefined) formData.append('subtitle', subtitle);
+  if (imageFile) {
+    formData.append('image', imageFile);
+  } else if (image) {
+    formData.append('image_url', image);
+  }
+  return formData;
+}
+
+export async function createArticle(fields, imageFile = null) {
+  const data = await adminJson(`${API_BASE}/api/articles/create/`, { method: 'POST', body: articleFormData(fields, imageFile) });
+  return data.article;
+}
+
+export async function updateArticle(articleId, fields, imageFile = null) {
+  const data = await adminJson(`${API_BASE}/api/articles/update/${articleId}/`, { method: 'POST', body: articleFormData(fields, imageFile) });
+  return data.article;
+}
+
+export async function deleteArticle(articleId) {
+  await adminJson(`${API_BASE}/api/articles/delete/${articleId}/`, { method: 'POST' });
+}

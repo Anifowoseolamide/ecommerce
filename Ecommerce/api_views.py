@@ -13,7 +13,7 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from products.models import Product, Category, ProductImage, PRODUCT_TAG_CHOICES
-from home.models import HeroBanner, HeritageSetting
+from home.models import Article, HeroBanner, HeritageSetting
 from orders.models import CheckoutSettings, Order, OrderItem, generate_order_reference, normalize_whatsapp_number
 from Ecommerce.supabase_storage import upload_to_supabase
 
@@ -985,3 +985,89 @@ def update_heritage(request):
     heritage.save()
     return JsonResponse({'status': 'success', 'heritage': heritage_to_dict(heritage)})
 
+
+# --- Articles -------------------------------------------------------------------
+
+MAX_ARTICLES = 12
+
+
+def article_to_dict(article):
+    return {
+        'id': str(article.uid),
+        'title': article.title,
+        'subtitle': article.subtitle,
+        'image': image_field_url(article.image),
+    }
+
+
+def get_articles(request):
+    """Public: the cards shown in the storefront's Articles section, in display order."""
+    return JsonResponse({'status': 'success', 'articles': [article_to_dict(a) for a in Article.objects.all()]})
+
+
+def apply_article_fields(article, request, creating):
+    """Copy title/subtitle/image from the request onto the article. Returns an error response, or None."""
+    if 'title' in request.POST or creating:
+        title = request.POST.get('title', '').strip()
+        if not title:
+            return JsonResponse({'error': 'A title is required.'}, status=400)
+        article.title = title[:255]
+    if 'subtitle' in request.POST:
+        article.subtitle = request.POST['subtitle'].strip()[:255]
+
+    image_file = request.FILES.get('image')
+    image_url = request.POST.get('image_url', '').strip()
+    if image_file:
+        supabase_url = upload_to_supabase(image_file, image_file.name, folder='articles')
+        article.image = supabase_url or image_file
+    elif image_url:
+        if not (image_url.startswith('http://') or image_url.startswith('https://')):
+            return JsonResponse({'error': 'The image link must start with http:// or https://'}, status=400)
+        article.image = image_url
+    elif creating:
+        return JsonResponse({'error': 'Please choose an image or paste an image link.'}, status=400)
+    return None
+
+
+@csrf_exempt
+@staff_required
+def create_article(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    if Article.objects.count() >= MAX_ARTICLES:
+        return JsonResponse({'error': f'You can have up to {MAX_ARTICLES} articles. Delete one to add another.'}, status=400)
+
+    article = Article(position=(Article.objects.order_by('-position').values_list('position', flat=True).first() or 0) + 1)
+    error = apply_article_fields(article, request, creating=True)
+    if error:
+        return error
+    article.save()
+    return JsonResponse({'status': 'success', 'article': article_to_dict(article)})
+
+
+@csrf_exempt
+@staff_required
+def update_article(request, article_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    article = Article.objects.filter(uid=article_id).first()
+    if not article:
+        return JsonResponse({'error': 'Article not found'}, status=404)
+
+    error = apply_article_fields(article, request, creating=False)
+    if error:
+        return error
+    article.save()
+    return JsonResponse({'status': 'success', 'article': article_to_dict(article)})
+
+
+@csrf_exempt
+@staff_required
+def delete_article(request, article_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    article = Article.objects.filter(uid=article_id).first()
+    if not article:
+        return JsonResponse({'error': 'Article not found'}, status=404)
+    article.delete()
+    return JsonResponse({'status': 'success'})

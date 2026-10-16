@@ -53,6 +53,10 @@ urlpatterns = [
     path("api/store-contact/", api_views.get_store_contact, name="api_store_contact"),
     path("api/heritage/", api_views.get_heritage, name="api_get_heritage"),
     path("api/heritage/update/", api_views.update_heritage, name="api_update_heritage"),
+    path("api/articles/", api_views.get_articles, name="api_get_articles"),
+    path("api/articles/create/", api_views.create_article, name="api_create_article"),
+    path("api/articles/update/<uuid:article_id>/", api_views.update_article, name="api_update_article"),
+    path("api/articles/delete/<uuid:article_id>/", api_views.delete_article, name="api_delete_article"),
 ]
 
 

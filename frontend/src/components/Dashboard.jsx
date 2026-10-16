@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Save, CheckCircle2, RefreshCw, Plus, Trash2, Edit2, Sparkles, X, Check, Loader2, ClipboardList, Images, Tags, Package, Landmark, Store, LogOut, Award, ShieldCheck, Truck } from 'lucide-react';
+import { Upload, Save, CheckCircle2, RefreshCw, Plus, Trash2, Edit2, Sparkles, X, Check, Loader2, ClipboardList, Images, Tags, Package, Landmark, Store, LogOut, Award, ShieldCheck, Truck, Newspaper } from 'lucide-react';
 import { uploadMediaFile, fetchOrdersPage, fetchProductsPage } from '../services/api';
 import Pagination from './Pagination';
 import usePagedList, { useDebounced } from '../hooks/usePagedList';
 import OrdersPanel from './OrdersPanel';
+import ArticlesPanel from './ArticlesPanel';
 import PaymentSettingsPanel from './PaymentSettingsPanel';
 import { INITIAL_SLIDES, CURRENCY_RATES, formatCurrency, PRODUCT_TAGS, tagClassName, HERITAGE_FEATURE } from '../data/initialData';
 
@@ -354,6 +355,7 @@ export default function Dashboard({
         { id: 'hero', label: 'Hero slides', icon: Images, count: slides.length },
         { id: 'categories', label: 'Categories', icon: Tags, count: categories.length },
         { id: 'heritage', label: 'Our Heritage', icon: Award },
+        { id: 'articles', label: 'Articles', icon: Newspaper },
         { id: 'products', label: 'Products', icon: Package, count: productList.pagination?.total },
       ],
     },
@@ -424,6 +426,8 @@ export default function Dashboard({
         {activeTab === 'payments' && <PaymentSettingsPanel />}
 
         {/* TAB: OUR HERITAGE STORY & CREDENTIALS */}
+        {activeTab === 'articles' && <ArticlesPanel />}
+
         {activeTab === 'heritage' && (
           <div className="dashboard-panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px', marginBottom: '24px' }}>
