@@ -2,7 +2,12 @@ import React from 'react';
 import { Award, ShieldCheck, Droplet, Sparkles, Truck } from 'lucide-react';
 import { HERITAGE_FEATURE } from '../data/initialData';
 
-export default function HeritageSection({ onExploreClick }) {
+export default function HeritageSection({ heritage = HERITAGE_FEATURE, onExploreClick }) {
+  const data = heritage || HERITAGE_FEATURE;
+  const stats = data.stats && data.stats.length > 0 ? data.stats : HERITAGE_FEATURE.stats;
+  const pillars = data.pillars && data.pillars.length > 0 ? data.pillars : HERITAGE_FEATURE.pillars;
+  const pillarIcons = [ShieldCheck, Truck, Award];
+
   return (
     <section className="heritage-section" id="brand-story">
       <div className="container">
@@ -10,25 +15,25 @@ export default function HeritageSection({ onExploreClick }) {
           {/* Visual Editorial Image */}
           <div className="heritage-image-wrapper">
             <img 
-              src={HERITAGE_FEATURE.image} 
-              alt="SwissMax Beauty Tradefair Lagos" 
+              src={data.image || HERITAGE_FEATURE.image} 
+              alt={data.title || "SwissMax Beauty Tradefair Lagos"} 
               className="heritage-img"
             />
             <div className="heritage-image-badge">
               <Sparkles size={16} color="var(--color-gold)" />
-              <span>{HERITAGE_FEATURE.badge_text || "SwissMax Beauty . Tradefair, Lagos"}</span>
+              <span>{data.badge_text || "SwissMax Beauty . Tradefair, Lagos"}</span>
             </div>
           </div>
 
           {/* Editorial Content */}
           <div className="heritage-content">
-            <span className="section-label">{HERITAGE_FEATURE.subtitle}</span>
-            <h2 className="heritage-title">{HERITAGE_FEATURE.title}</h2>
-            <p className="heritage-body">{HERITAGE_FEATURE.body}</p>
+            <span className="section-label">{data.subtitle}</span>
+            <h2 className="heritage-title">{data.title}</h2>
+            <p className="heritage-body">{data.body}</p>
 
             {/* Stats / Trust Badges */}
             <div className="heritage-stats-grid">
-              {HERITAGE_FEATURE.stats.map((st, idx) => (
+              {stats.map((st, idx) => (
                 <div key={idx} className="heritage-stat-card">
                   <span className="heritage-stat-val">{st.value}</span>
                   <span className="heritage-stat-lbl">{st.label}</span>
@@ -38,18 +43,15 @@ export default function HeritageSection({ onExploreClick }) {
 
             {/* Pillar Badges */}
             <div className="heritage-pillars">
-              <div className="heritage-pillar-item">
-                <ShieldCheck size={16} color="var(--color-gold)" />
-                <span>Certified distributor of over 30 OPM</span>
-              </div>
-              <div className="heritage-pillar-item">
-                <Truck size={16} color="var(--color-gold)" />
-                <span>Western Africa wide Delivery</span>
-              </div>
-              <div className="heritage-pillar-item">
-                <Award size={16} color="var(--color-gold)" />
-                <span>Thailand, Korea, USA Products.</span>
-              </div>
+              {pillars.map((pillar, idx) => {
+                const IconComponent = pillarIcons[idx % pillarIcons.length];
+                return (
+                  <div key={idx} className="heritage-pillar-item">
+                    <IconComponent size={16} color="var(--color-gold)" />
+                    <span>{pillar}</span>
+                  </div>
+                );
+              })}
             </div>
 
             <button 
@@ -57,7 +59,7 @@ export default function HeritageSection({ onExploreClick }) {
               onClick={onExploreClick}
               style={{ color: '#000', borderColor: '#000', marginTop: '24px' }}
             >
-              EXPLORE OUR PRODUCTS
+              {data.button_text || "EXPLORE OUR PRODUCTS"}
             </button>
           </div>
         </div>

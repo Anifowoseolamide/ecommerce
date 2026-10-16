@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Save, CheckCircle2, RefreshCw, Plus, Trash2, Edit2, Sparkles, X, Check, Loader2, ClipboardList, Images, Tags, Package, Landmark, Store, LogOut } from 'lucide-react';
+import { Upload, Save, CheckCircle2, RefreshCw, Plus, Trash2, Edit2, Sparkles, X, Check, Loader2, ClipboardList, Images, Tags, Package, Landmark, Store, LogOut, Award, ShieldCheck, Truck } from 'lucide-react';
 import { uploadMediaFile, fetchOrdersPage, fetchProductsPage } from '../services/api';
 import Pagination from './Pagination';
 import usePagedList, { useDebounced } from '../hooks/usePagedList';
 import OrdersPanel from './OrdersPanel';
 import PaymentSettingsPanel from './PaymentSettingsPanel';
-import { INITIAL_SLIDES, CURRENCY_RATES, formatCurrency, PRODUCT_TAGS, tagClassName } from '../data/initialData';
+import { INITIAL_SLIDES, CURRENCY_RATES, formatCurrency, PRODUCT_TAGS, tagClassName, HERITAGE_FEATURE } from '../data/initialData';
 
 // Prices are stored in NGN (the storefront's base currency); USD entries are converted at the site rate
 const PRICE_CURRENCIES = ['NGN', 'USD'];
@@ -40,11 +40,13 @@ export default function Dashboard({
   onTabChange,
   onDeleteProduct,
   onBackToStore,
-  onLogoutAdmin
+  onLogoutAdmin,
+  heritage,
+  onUpdateHeritage,
 }) {
 
   // The current page comes from the URL when App provides it (/admin/orders etc.)
-  const [localTab, setLocalTab] = useState('hero'); // 'hero' | 'categories' | 'products' | 'orders' | 'payments'
+  const [localTab, setLocalTab] = useState('hero'); // 'hero' | 'categories' | 'products' | 'orders' | 'payments' | 'heritage'
   const activeTab = routeTab ?? localTab;
   const setActiveTab = onTabChange ?? setLocalTab;
   const [newOrderCount, setNewOrderCount] = useState(0);
@@ -98,6 +100,48 @@ export default function Dashboard({
   const [savingNotice, setSavingNotice] = useState('');
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+
+  // Heritage State
+  const [heritageForm, setHeritageForm] = useState(heritage || HERITAGE_FEATURE);
+  const [heritageImageFile, setHeritageImageFile] = useState(null);
+  const [isSavingHeritage, setIsSavingHeritage] = useState(false);
+  const [heritageSaveSuccess, setHeritageSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    if (heritage) {
+      setHeritageForm(heritage);
+    }
+  }, [heritage]);
+
+  const handleHeritageImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setHeritageImageFile(file);
+    const localUrl = URL.createObjectURL(file);
+    setHeritageForm((prev) => ({ ...prev, image: localUrl }));
+  };
+
+  const handleHeritageSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setIsSavingHeritage(true);
+    setHeritageSaveSuccess(false);
+    try {
+      if (onUpdateHeritage) {
+        await onUpdateHeritage(heritageForm, heritageImageFile);
+      }
+      setHeritageSaveSuccess(true);
+      setSavingNotice('Our Heritage section updated successfully!');
+      setTimeout(() => {
+        setSavingNotice('');
+        setHeritageSaveSuccess(false);
+      }, 4000);
+    } catch (err) {
+      console.error(err);
+      alert('Error updating Our Heritage section.');
+    } finally {
+      setIsSavingHeritage(false);
+    }
+  };
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   // Inline product editor state
@@ -309,6 +353,7 @@ export default function Dashboard({
       items: [
         { id: 'hero', label: 'Hero slides', icon: Images, count: slides.length },
         { id: 'categories', label: 'Categories', icon: Tags, count: categories.length },
+        { id: 'heritage', label: 'Our Heritage', icon: Award },
         { id: 'products', label: 'Products', icon: Package, count: productList.pagination?.total },
       ],
     },
@@ -377,6 +422,380 @@ export default function Dashboard({
           <OrdersPanel onCountsChange={(counts) => setNewOrderCount(counts.new)} />
         )}
         {activeTab === 'payments' && <PaymentSettingsPanel />}
+
+        {/* TAB: OUR HERITAGE STORY & CREDENTIALS */}
+        {activeTab === 'heritage' && (
+          <div className="dashboard-panel">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px', marginBottom: '24px' }}>
+              <div>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '18px', letterSpacing: '0.06em' }}>
+                  OUR HERITAGE STORY & CREDENTIALS
+                </h2>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                  Customise the editorial story, photo, trust statistics, and certified distributor pillars displayed on the homepage.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleHeritageSubmit}
+                disabled={isSavingHeritage}
+                className="btn-discover"
+                style={{
+                  background: heritageSaveSuccess ? '#EBF7EE' : 'var(--color-gold)',
+                  color: heritageSaveSuccess ? '#1E7E34' : '#000',
+                  borderColor: heritageSaveSuccess ? '#28A745' : 'var(--color-gold)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontWeight: '700',
+                  padding: '10px 22px'
+                }}
+              >
+                {isSavingHeritage ? (
+                  <>
+                    <Loader2 size={15} className="spinning" />
+                    <span>SAVING...</span>
+                  </>
+                ) : heritageSaveSuccess ? (
+                  <>
+                    <CheckCircle2 size={15} color="#28A745" />
+                    <span>SAVED!</span>
+                  </>
+                ) : (
+                  <>
+                    <Save size={15} />
+                    <span>SAVE HERITAGE SETTINGS</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <form onSubmit={handleHeritageSubmit}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) 1.5fr', gap: '26px' }} className="dash-form-2col">
+                {/* Left Column: Visual Photo & Overlay Badges */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ border: '1px solid var(--border-light)', padding: '18px', background: '#FFF', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '12px' }}>
+                      Heritage Editorial Photo
+                    </span>
+
+                    {/* Preview with Badge Overlay */}
+                    <div style={{ position: 'relative', width: '100%', height: '240px', background: '#F5F5F5', borderRadius: '4px', overflow: 'hidden', marginBottom: '14px', border: '1px solid rgba(0,0,0,0.08)' }}>
+                      <img
+                        src={heritageForm.image || HERITAGE_FEATURE.image}
+                        alt="Heritage Preview"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                      <div style={{ position: 'absolute', bottom: '12px', left: '12px', right: '12px', background: 'rgba(11, 12, 14, 0.88)', backdropFilter: 'blur(4px)', color: '#FFF', padding: '8px 12px', borderRadius: '3px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: '500', border: '1px solid rgba(197, 160, 89, 0.3)' }}>
+                        <Sparkles size={14} color="var(--color-gold)" />
+                        <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {heritageForm.badge_text || "SwissMax Beauty . Tradefair, Lagos"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '12px' }}>
+                      <label className="form-label" style={{ fontSize: '11px' }}>Upload New Photo:</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleHeritageImageChange}
+                        className="form-input"
+                        style={{ padding: '6px', fontSize: '11px' }}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '12px' }}>
+                      <label className="form-label" style={{ fontSize: '11px' }}>Or Paste Image URL:</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={heritageForm.image || ''}
+                        onChange={(e) => setHeritageForm({ ...heritageForm, image: e.target.value })}
+                        placeholder="https://..."
+                        style={{ fontSize: '12px' }}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '12px' }}>
+                      <label className="form-label" style={{ fontSize: '11px' }}>Badge Overlay Text:</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={heritageForm.badge_text ?? ''}
+                        onChange={(e) => setHeritageForm({ ...heritageForm, badge_text: e.target.value })}
+                        placeholder="e.g. SwissMax Beauty . Tradefair, Lagos"
+                        style={{ fontSize: '12px' }}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '11px' }}>Explore Button Label:</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={heritageForm.button_text ?? ''}
+                        onChange={(e) => setHeritageForm({ ...heritageForm, button_text: e.target.value })}
+                        placeholder="EXPLORE OUR PRODUCTS"
+                        style={{ fontSize: '12px' }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Copywriting, Stats & Pillars */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ border: '1px solid var(--border-light)', padding: '18px', background: '#FFF', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '14px' }}>
+                      Editorial Writings & Story
+                    </span>
+
+                    <div className="form-group" style={{ marginBottom: '14px' }}>
+                      <label className="form-label">Category Eyebrow / Tag:</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={heritageForm.subtitle ?? ''}
+                        onChange={(e) => setHeritageForm({ ...heritageForm, subtitle: e.target.value })}
+                        placeholder="e.g. ORIGINAL. AFFORDABLE. PRISTINE"
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: '14px' }}>
+                      <label className="form-label">Main Section Headline:</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={heritageForm.title ?? ''}
+                        onChange={(e) => setHeritageForm({ ...heritageForm, title: e.target.value })}
+                        placeholder="e.g. BEAUTY BRANDS YOU CAN TRUST AT THE BEST PRICE"
+                        style={{ fontWeight: '600' }}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">Story & About SwissMax Body Text:</label>
+                      <textarea
+                        className="form-input"
+                        rows={4}
+                        value={heritageForm.body ?? ''}
+                        onChange={(e) => setHeritageForm({ ...heritageForm, body: e.target.value })}
+                        placeholder="Write the brand heritage and history..."
+                        style={{ resize: 'vertical', lineHeight: '1.6' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 3 Key Stats */}
+                  <div style={{ border: '1px solid var(--border-light)', padding: '18px', background: '#FFF', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '14px' }}>
+                      Trust Statistics (3 Highlight Cards)
+                    </span>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }} className="dash-countdown-grid">
+                      <div style={{ background: '#FAF6EF', padding: '12px', borderRadius: '4px', border: '1px solid rgba(197, 160, 89, 0.25)' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--color-gold)', fontWeight: '700', display: 'block', marginBottom: '6px' }}>STAT CARD 1</span>
+                        <div className="form-group" style={{ marginBottom: '8px' }}>
+                          <label className="form-label" style={{ fontSize: '10px' }}>Value:</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={heritageForm.stats?.[0]?.value ?? ''}
+                            onChange={(e) => {
+                              const newStats = [...(heritageForm.stats || [{}, {}, {}])];
+                              newStats[0] = { ...(newStats[0] || {}), value: e.target.value };
+                              setHeritageForm({ ...heritageForm, stats: newStats });
+                            }}
+                            placeholder="100%"
+                            style={{ fontWeight: '700' }}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label" style={{ fontSize: '10px' }}>Label:</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={heritageForm.stats?.[0]?.label ?? ''}
+                            onChange={(e) => {
+                              const newStats = [...(heritageForm.stats || [{}, {}, {}])];
+                              newStats[0] = { ...(newStats[0] || {}), label: e.target.value };
+                              setHeritageForm({ ...heritageForm, stats: newStats });
+                            }}
+                            placeholder="Original Product Manufacturer"
+                            style={{ fontSize: '11px' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ background: '#FAF6EF', padding: '12px', borderRadius: '4px', border: '1px solid rgba(197, 160, 89, 0.25)' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--color-gold)', fontWeight: '700', display: 'block', marginBottom: '6px' }}>STAT CARD 2</span>
+                        <div className="form-group" style={{ marginBottom: '8px' }}>
+                          <label className="form-label" style={{ fontSize: '10px' }}>Value:</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={heritageForm.stats?.[1]?.value ?? ''}
+                            onChange={(e) => {
+                              const newStats = [...(heritageForm.stats || [{}, {}, {}])];
+                              newStats[1] = { ...(newStats[1] || {}), value: e.target.value };
+                              setHeritageForm({ ...heritageForm, stats: newStats });
+                            }}
+                            placeholder="98.7%"
+                            style={{ fontWeight: '700' }}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label" style={{ fontSize: '10px' }}>Label:</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={heritageForm.stats?.[1]?.label ?? ''}
+                            onChange={(e) => {
+                              const newStats = [...(heritageForm.stats || [{}, {}, {}])];
+                              newStats[1] = { ...(newStats[1] || {}), label: e.target.value };
+                              setHeritageForm({ ...heritageForm, stats: newStats });
+                            }}
+                            placeholder="Affordability Rating"
+                            style={{ fontSize: '11px' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ background: '#FAF6EF', padding: '12px', borderRadius: '4px', border: '1px solid rgba(197, 160, 89, 0.25)' }}>
+                        <span style={{ fontSize: '10px', color: 'var(--color-gold)', fontWeight: '700', display: 'block', marginBottom: '6px' }}>STAT CARD 3</span>
+                        <div className="form-group" style={{ marginBottom: '8px' }}>
+                          <label className="form-label" style={{ fontSize: '10px' }}>Value:</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={heritageForm.stats?.[2]?.value ?? ''}
+                            onChange={(e) => {
+                              const newStats = [...(heritageForm.stats || [{}, {}, {}])];
+                              newStats[2] = { ...(newStats[2] || {}), value: e.target.value };
+                              setHeritageForm({ ...heritageForm, stats: newStats });
+                            }}
+                            placeholder="Bulk Orders"
+                            style={{ fontWeight: '700' }}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label" style={{ fontSize: '10px' }}>Label:</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            value={heritageForm.stats?.[2]?.label ?? ''}
+                            onChange={(e) => {
+                              const newStats = [...(heritageForm.stats || [{}, {}, {}])];
+                              newStats[2] = { ...(newStats[2] || {}), label: e.target.value };
+                              setHeritageForm({ ...heritageForm, stats: newStats });
+                            }}
+                            placeholder="Global Supply to Resellers"
+                            style={{ fontSize: '11px' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3 Certified Pillars / Trust Points */}
+                  <div style={{ border: '1px solid var(--border-light)', padding: '18px', background: '#FFF', borderRadius: '4px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '14px' }}>
+                      Certified Trust Pillars (3 Bullet Highlights)
+                    </span>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <ShieldCheck size={14} color="var(--color-gold)" />
+                          <span>Pillar 1 (Certified Distributor):</span>
+                        </label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={heritageForm.pillars?.[0] ?? ''}
+                          onChange={(e) => {
+                            const newPillars = [...(heritageForm.pillars || ['', '', ''])];
+                            newPillars[0] = e.target.value;
+                            setHeritageForm({ ...heritageForm, pillars: newPillars });
+                          }}
+                          placeholder="Certified distributor of over 30 OPM"
+                        />
+                      </div>
+
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Truck size={14} color="var(--color-gold)" />
+                          <span>Pillar 2 (Delivery Range):</span>
+                        </label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={heritageForm.pillars?.[1] ?? ''}
+                          onChange={(e) => {
+                            const newPillars = [...(heritageForm.pillars || ['', '', ''])];
+                            newPillars[1] = e.target.value;
+                            setHeritageForm({ ...heritageForm, pillars: newPillars });
+                          }}
+                          placeholder="Western Africa wide Delivery"
+                        />
+                      </div>
+
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Award size={14} color="var(--color-gold)" />
+                          <span>Pillar 3 (Product Origins):</span>
+                        </label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={heritageForm.pillars?.[2] ?? ''}
+                          onChange={(e) => {
+                            const newPillars = [...(heritageForm.pillars || ['', '', ''])];
+                            newPillars[2] = e.target.value;
+                            setHeritageForm({ ...heritageForm, pillars: newPillars });
+                          }}
+                          placeholder="Thailand, Korea, USA Products."
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Save button row */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+                    <button
+                      type="submit"
+                      disabled={isSavingHeritage}
+                      className="btn-discover dash-save-btn"
+                      style={{
+                        background: 'var(--color-gold)',
+                        color: '#000',
+                        borderColor: 'var(--color-gold)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontWeight: '700',
+                        padding: '12px 28px'
+                      }}
+                    >
+                      {isSavingHeritage ? (
+                        <>
+                          <Loader2 size={16} className="spinning" />
+                          <span>SAVING HERITAGE CHANGES...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save size={16} />
+                          <span>SAVE ALL HERITAGE SETTINGS</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* TAB 1: ROTATING SPLIT HERO BANNERS */}
         {activeTab === 'hero' && (

@@ -1,4 +1,4 @@
-import { INITIAL_BANNER, INITIAL_CATEGORIES } from '../data/initialData';
+import { INITIAL_BANNER, INITIAL_CATEGORIES, HERITAGE_FEATURE } from '../data/initialData';
 
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 
@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
   BANNER: 'swissmax_banner_data',
   CATEGORIES: 'swissmax_categories_data',
   CONTACT: 'swissmax_store_contact',
+  HERITAGE: 'swissmax_heritage_data',
 };
 
 export const ADMIN_AUTH_KEY = 'swissmax_admin_auth';
@@ -432,3 +433,65 @@ export async function fetchStoreContact() {
     return { whatsapp_number: '' };
   }
 }
+
+export async function fetchHeritageData() {
+  try {
+    const res = await fetch(`${API_BASE}/api/heritage/`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.heritage) {
+        localStorage.setItem(STORAGE_KEYS.HERITAGE, JSON.stringify(data.heritage));
+        return data.heritage;
+      }
+    }
+  } catch (err) {
+    console.warn('API heritage fetch failed, reading from local storage:', err);
+  }
+
+  const local = localStorage.getItem(STORAGE_KEYS.HERITAGE);
+  if (local) {
+    try {
+      const parsed = JSON.parse(local);
+      if (parsed && parsed.title) return parsed;
+    } catch (e) {}
+  }
+  return HERITAGE_FEATURE;
+}
+
+export async function saveHeritageData(updatedHeritage, imageFile = null) {
+  try {
+    const formData = new FormData();
+    Object.keys(updatedHeritage).forEach((key) => {
+      const val = updatedHeritage[key];
+      if (val !== null && val !== undefined) {
+        formData.append(key, typeof val === 'object' ? JSON.stringify(val) : val);
+      }
+    });
+
+    if (imageFile) {
+      formData.append('image_file', imageFile);
+    }
+    if (updatedHeritage.image) {
+      formData.append('image_url', updatedHeritage.image);
+    }
+
+    const res = await adminFetch(`${API_BASE}/api/heritage/update/`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data.heritage) {
+        localStorage.setItem(STORAGE_KEYS.HERITAGE, JSON.stringify(data.heritage));
+        return data.heritage;
+      }
+    }
+  } catch (err) {
+    console.warn('API heritage update failed, saving locally:', err);
+  }
+
+  localStorage.setItem(STORAGE_KEYS.HERITAGE, JSON.stringify(updatedHeritage));
+  return updatedHeritage;
+}
+

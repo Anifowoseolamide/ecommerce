@@ -13,7 +13,7 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from products.models import Product, Category, ProductImage, PRODUCT_TAG_CHOICES
-from home.models import HeroBanner
+from home.models import HeroBanner, HeritageSetting
 from orders.models import CheckoutSettings, Order, OrderItem, generate_order_reference, normalize_whatsapp_number
 from Ecommerce.supabase_storage import upload_to_supabase
 
@@ -859,3 +859,129 @@ def get_store_contact(request):
     """Public: the WhatsApp number shoppers can message. Bank details stay out of public responses."""
     current = CheckoutSettings.objects.first()
     return JsonResponse({'status': 'success', 'whatsapp_number': current.whatsapp_number if current else ''})
+
+
+def heritage_to_dict(h):
+    img = h.image_url
+    if h.image:
+        img = image_field_url(h.image)
+    return {
+        'id': str(h.uid),
+        'title': h.title,
+        'subtitle': h.subtitle,
+        'badge_text': h.badge_text,
+        'body': h.body,
+        'image': img or 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=85',
+        'button_text': h.button_text,
+        'stats': [
+            {'value': h.stat_1_val, 'label': h.stat_1_lbl},
+            {'value': h.stat_2_val, 'label': h.stat_2_lbl},
+            {'value': h.stat_3_val, 'label': h.stat_3_lbl},
+        ],
+        'pillars': [
+            h.pillar_1,
+            h.pillar_2,
+            h.pillar_3,
+        ],
+        'is_active': h.is_active,
+    }
+
+
+def get_heritage(request):
+    """Retrieve active Heritage Section content."""
+    heritage = HeritageSetting.objects.filter(is_active=True).first()
+    if not heritage:
+        heritage = HeritageSetting.objects.create()
+    return JsonResponse({'status': 'success', 'heritage': heritage_to_dict(heritage)})
+
+
+@csrf_exempt
+@staff_required
+def update_heritage(request):
+    """Update Heritage Section content and image."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    heritage = HeritageSetting.objects.filter(is_active=True).first()
+    if not heritage:
+        heritage = HeritageSetting.objects.create()
+
+    # Image file upload
+    if 'image_file' in request.FILES:
+        f = request.FILES['image_file']
+        supabase_url = upload_to_supabase(f, f.name, folder='heritage')
+        if supabase_url:
+            heritage.image_url = supabase_url
+            heritage.image = None
+        else:
+            heritage.image = f
+            heritage.image_url = ""
+
+    if request.content_type and 'application/json' in request.content_type:
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+        except Exception:
+            data = {}
+    else:
+        data = request.POST
+
+    if 'title' in data and data['title'] is not None:
+        heritage.title = str(data['title']).strip()
+    if 'subtitle' in data and data['subtitle'] is not None:
+        heritage.subtitle = str(data['subtitle']).strip()
+    if 'badge_text' in data and data['badge_text'] is not None:
+        heritage.badge_text = str(data['badge_text']).strip()
+    if 'body' in data and data['body'] is not None:
+        heritage.body = str(data['body']).strip()
+    if 'button_text' in data and data['button_text'] is not None:
+        heritage.button_text = str(data['button_text']).strip()
+
+    img_url = data.get('image_url') or data.get('image')
+    if img_url and isinstance(img_url, str) and img_url.startswith('http'):
+        heritage.image_url = img_url
+        heritage.image = None
+
+    # Stats
+    if 'stat_1_val' in data:
+        heritage.stat_1_val = str(data['stat_1_val']).strip()
+    if 'stat_1_lbl' in data:
+        heritage.stat_1_lbl = str(data['stat_1_lbl']).strip()
+    if 'stat_2_val' in data:
+        heritage.stat_2_val = str(data['stat_2_val']).strip()
+    if 'stat_2_lbl' in data:
+        heritage.stat_2_lbl = str(data['stat_2_lbl']).strip()
+    if 'stat_3_val' in data:
+        heritage.stat_3_val = str(data['stat_3_val']).strip()
+    if 'stat_3_lbl' in data:
+        heritage.stat_3_lbl = str(data['stat_3_lbl']).strip()
+
+    if 'stats' in data and isinstance(data['stats'], list):
+        if len(data['stats']) > 0 and isinstance(data['stats'][0], dict):
+            heritage.stat_1_val = str(data['stats'][0].get('value', heritage.stat_1_val)).strip()
+            heritage.stat_1_lbl = str(data['stats'][0].get('label', heritage.stat_1_lbl)).strip()
+        if len(data['stats']) > 1 and isinstance(data['stats'][1], dict):
+            heritage.stat_2_val = str(data['stats'][1].get('value', heritage.stat_2_val)).strip()
+            heritage.stat_2_lbl = str(data['stats'][1].get('label', heritage.stat_2_lbl)).strip()
+        if len(data['stats']) > 2 and isinstance(data['stats'][2], dict):
+            heritage.stat_3_val = str(data['stats'][2].get('value', heritage.stat_3_val)).strip()
+            heritage.stat_3_lbl = str(data['stats'][2].get('label', heritage.stat_3_lbl)).strip()
+
+    # Pillars
+    if 'pillar_1' in data:
+        heritage.pillar_1 = str(data['pillar_1']).strip()
+    if 'pillar_2' in data:
+        heritage.pillar_2 = str(data['pillar_2']).strip()
+    if 'pillar_3' in data:
+        heritage.pillar_3 = str(data['pillar_3']).strip()
+
+    if 'pillars' in data and isinstance(data['pillars'], list):
+        if len(data['pillars']) > 0:
+            heritage.pillar_1 = str(data['pillars'][0]).strip()
+        if len(data['pillars']) > 1:
+            heritage.pillar_2 = str(data['pillars'][1]).strip()
+        if len(data['pillars']) > 2:
+            heritage.pillar_3 = str(data['pillars'][2]).strip()
+
+    heritage.save()
+    return JsonResponse({'status': 'success', 'heritage': heritage_to_dict(heritage)})
+

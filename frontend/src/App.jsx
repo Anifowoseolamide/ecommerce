@@ -9,6 +9,7 @@ import CartDrawer from './components/CartDrawer';
 import Dashboard from './components/Dashboard';
 import HeritageSection from './components/HeritageSection';
 import LookbookSection from './components/LookbookSection';
+import BrandMarqueeSection from './components/BrandMarqueeSection';
 import Footer from './components/Footer';
 import AdminLoginModal from './components/AdminLoginModal';
 
@@ -24,12 +25,14 @@ import {
   deleteProductOnBackend,
   getStoredAdminAuth,
   clearStoredAdminAuth,
-  ADMIN_SESSION_EXPIRED_EVENT
+  ADMIN_SESSION_EXPIRED_EVENT,
+  fetchHeritageData,
+  saveHeritageData,
 } from './services/api';
 
-import { INITIAL_BANNER, INITIAL_CATEGORIES } from './data/initialData';
+import { INITIAL_BANNER, INITIAL_CATEGORIES, HERITAGE_FEATURE } from './data/initialData';
 
-const ADMIN_TABS = ['hero', 'categories', 'products', 'orders', 'payments'];
+const ADMIN_TABS = ['hero', 'categories', 'products', 'orders', 'payments', 'heritage'];
 
 // /admin and /admin/<tab> are the dashboard; every other path is the storefront
 function parsePath(pathname) {
@@ -89,6 +92,17 @@ export default function App() {
     return INITIAL_CATEGORIES;
   });
 
+  const [heritage, setHeritage] = useState(() => {
+    try {
+      const local = localStorage.getItem('swissmax_heritage_data');
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (parsed && parsed.title) return parsed;
+      }
+    } catch (e) {}
+    return HERITAGE_FEATURE;
+  });
+
   const [currency, setCurrency] = useState('NGN');
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,6 +132,8 @@ export default function App() {
         const catData = await fetchCategoriesData();
         if (catData && catData.length > 0) setCategories(catData);
 
+        const heritageData = await fetchHeritageData();
+        if (heritageData) setHeritage(heritageData);
       } catch (e) {
         console.warn('Initial data load failed:', e);
       }
@@ -278,6 +294,18 @@ export default function App() {
           onUpdateProduct={handleUpdateProduct}
           onAddProduct={handleAddProduct}
           onDeleteProduct={handleDeleteProduct}
+          heritage={heritage}
+          onUpdateHeritage={async (updatedHeritage, imageFile) => {
+            setHeritage(updatedHeritage);
+            try {
+              const saved = await saveHeritageData(updatedHeritage, imageFile);
+              if (saved) setHeritage(saved);
+              return saved;
+            } catch (err) {
+              console.warn('Failed to save heritage:', err);
+              return updatedHeritage;
+            }
+          }}
           onBackToStore={() => navigate('/')}
           activeTab={route.tab}
           onTabChange={(tab) => navigate(`/admin/${tab}`)}
@@ -313,6 +341,7 @@ export default function App() {
 
           {/* 6. Swiss Alpine Cellular Heritage (Rich Visual Section) */}
           <HeritageSection
+            heritage={heritage}
             onExploreClick={() => {
               const el = document.getElementById('catalog');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -322,6 +351,15 @@ export default function App() {
           {/* 7. Editorial Lookbook Gallery (Images Across Disciplines) */}
           <LookbookSection
             onSelectCategory={setActiveCategory}
+          />
+
+          {/* 8. Authentic Brand Partners Infinite Sliding Carousel */}
+          <BrandMarqueeSection
+            onSelectBrand={(brandName) => {
+              setSearchQuery(brandName);
+              const el = document.getElementById('catalog');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
           />
         </main>
 

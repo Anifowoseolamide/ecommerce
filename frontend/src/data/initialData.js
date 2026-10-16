@@ -155,6 +155,7 @@ export const HERITAGE_FEATURE = {
   badge_text: "SwissMax Beauty . Tradefair, Lagos",
   body: "Founded in 2022 in Lagos Nigeria, SwissMax Beauty Group LTD curates and imports exceptional, high-in-demand and effective Beauty products directly from original Manufacturers, making them available to our customers at highly competitive prices",
   image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1200&q=85",
+  button_text: "EXPLORE OUR PRODUCTS",
   stats: [
     { label: "Original Product Manufacturer", value: "100%" },
     { label: "Affordability Rating", value: "98.7%" },

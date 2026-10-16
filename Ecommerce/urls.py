@@ -51,6 +51,8 @@ urlpatterns = [
     path("api/orders/<uuid:order_id>/status/", api_views.update_order_status, name="api_update_order_status"),
     path("api/checkout-settings/", api_views.checkout_settings, name="api_checkout_settings"),
     path("api/store-contact/", api_views.get_store_contact, name="api_store_contact"),
+    path("api/heritage/", api_views.get_heritage, name="api_get_heritage"),
+    path("api/heritage/update/", api_views.update_heritage, name="api_update_heritage"),
 ]
 
 
