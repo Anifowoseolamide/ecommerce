@@ -5,8 +5,6 @@ const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '');
 const STORAGE_KEYS = {
   BANNER: 'swissmax_banner_data',
   CATEGORIES: 'swissmax_categories_data',
-  // v2: v1 caches contain the removed demo products and unsaved local-only products
-  PRODUCTS: 'swissmax_products_data_v2',
   CONTACT: 'swissmax_store_contact',
 };
 
@@ -162,41 +160,41 @@ export async function saveCategoriesData(categoriesList) {
   return categoriesList;
 }
 
-export async function fetchProductsData() {
+const PRODUCT_IMAGE_FALLBACK = 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80';
+
+// One page of products. The server filters (category, q), sorts and paginates.
+// Resolves to { items, pagination: { page, page_size, total, total_pages }, counts: { all, <category-slug>: n } }.
+export async function fetchProductsPage({ page = 1, pageSize = 12, category = '', q = '', sort = 'featured' } = {}) {
+  const params = new URLSearchParams({ page, page_size: pageSize, sort });
+  if (category) params.set('category', category);
+  if (q) params.set('q', q);
+
+  let res;
   try {
-    const res = await fetch(`${API_BASE}/api/products/`);
-    if (res.ok) {
-      const data = await res.json();
-      // The backend is the source of truth — an empty list means there are no products yet
-      if (Array.isArray(data.products)) {
-        const formatted = data.products.map(p => ({
-          id: p.id,
-          name: p.name,
-          slug: p.slug,
-          price: p.price,
-          description: p.description,
-          category_slug: p.category_slug,
-          category_name: p.category_name,
-          image: p.image || 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80',
-          tag: p.tag || ''
-        }));
-        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(formatted));
-        return formatted;
-      }
-    }
-  } catch (e) {}
-
-  // Backend unreachable: show the last list it returned
-  const local = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-  if (local) {
-    try { return JSON.parse(local); } catch(e){}
+    res = await fetch(`${API_BASE}/api/products/?${params}`);
+  } catch (e) {
+    throw new Error('Could not reach the server. Check your connection and try again.');
   }
-  return [];
-}
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !Array.isArray(data.products) || !data.pagination) {
+    throw new Error(data.error || `Server error (${res.status}). Please try again.`);
+  }
 
-export async function saveProductsData(productsList) {
-  localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(productsList));
-  return productsList;
+  return {
+    items: data.products.map(p => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      price: p.price,
+      description: p.description,
+      category_slug: p.category_slug,
+      category_name: p.category_name,
+      image: p.image || PRODUCT_IMAGE_FALLBACK,
+      tag: p.tag || ''
+    })),
+    pagination: data.pagination,
+    counts: data.counts,
+  };
 }
 
 export async function uploadMediaFile(file) {
@@ -273,33 +271,35 @@ export async function createProductOnBackend(productData, imageFile = null) {
   return data.product;
 }
 
+// Throws on failure so the dashboard never shows an edit that wasn't stored
 export async function updateProductOnBackend(productId, updates, imageFile = null) {
-  try {
-    const formData = new FormData();
-    if (updates.name) formData.append('name', updates.name);
-    if (updates.price !== undefined && updates.price !== null) formData.append('price', updates.price);
-    if (updates.description !== undefined) formData.append('description', updates.description);
-    if (updates.category_slug) formData.append('category', updates.category_slug);
-    if (updates.tag !== undefined) formData.append('tag', updates.tag);
-    // Support image updates: either a File object or a URL string
-    if (imageFile) {
-      formData.append('image', imageFile);
-    } else if (updates.image && typeof updates.image === 'string' && updates.image.startsWith('http')) {
-      formData.append('image_url', updates.image);
-    }
+  const formData = new FormData();
+  if (updates.name) formData.append('name', updates.name);
+  if (updates.price !== undefined && updates.price !== null) formData.append('price', updates.price);
+  if (updates.description !== undefined) formData.append('description', updates.description);
+  if (updates.category_slug) formData.append('category', updates.category_slug);
+  if (updates.tag !== undefined) formData.append('tag', updates.tag);
+  // Support image updates: either a File object or a URL string
+  if (imageFile) {
+    formData.append('image', imageFile);
+  } else if (updates.image && typeof updates.image === 'string' && updates.image.startsWith('http')) {
+    formData.append('image_url', updates.image);
+  }
 
-    const res = await adminFetch(`${API_BASE}/api/products/update/${productId}/`, {
+  let res;
+  try {
+    res = await adminFetch(`${API_BASE}/api/products/update/${productId}/`, {
       method: 'POST',
       body: formData,
     });
-    if (res.ok) {
-      const data = await res.json();
-      return data.product;
-    }
   } catch (e) {
-    console.error('Failed to update product on backend:', e);
+    throw new Error('Could not reach the server. Check your connection and try again.');
   }
-  return null;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.product) {
+    throw new Error(data.error || `Server error (${res.status}). Please try again.`);
+  }
+  return data.product;
 }
 
 // Saves a category's tagline and image (a File to upload, or an http(s) link). Throws on failure.
@@ -329,19 +329,18 @@ export async function updateCategoryOnBackend(categoryId, { description, image }
   return data.category;
 }
 
+// Throws on failure so a product that is still in the catalog is never shown as deleted
 export async function deleteProductOnBackend(productId) {
+  let res;
   try {
-    const res = await adminFetch(`${API_BASE}/api/products/delete/${productId}/`, {
-      method: 'POST',
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return data.status === 'success';
-    }
+    res = await adminFetch(`${API_BASE}/api/products/delete/${productId}/`, { method: 'POST' });
   } catch (e) {
-    console.error('Failed to delete product on backend:', e);
+    throw new Error('Could not reach the server. Check your connection and try again.');
   }
-  return false;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.status !== 'success') {
+    throw new Error(data.error || `Server error (${res.status}). Please try again.`);
+  }
 }
 
 // Public: place an order. Throws with the server's message; err.unavailable lists product ids no longer for sale.
@@ -384,9 +383,12 @@ async function adminJson(url, options = {}) {
   return data;
 }
 
-export async function fetchOrders() {
-  const data = await adminJson(`${API_BASE}/api/orders/`);
-  return data.orders;
+// One page of orders (newest first). Resolves to { items, pagination, counts: { all, new, paid, delivered, cancelled } }.
+export async function fetchOrdersPage({ page = 1, pageSize = 20, status = '' } = {}) {
+  const params = new URLSearchParams({ page, page_size: pageSize });
+  if (status) params.set('status', status);
+  const data = await adminJson(`${API_BASE}/api/orders/?${params}`);
+  return { items: data.orders, pagination: data.pagination, counts: data.counts };
 }
 
 export async function updateOrderStatus(orderId, status) {

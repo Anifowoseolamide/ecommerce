@@ -18,8 +18,6 @@ import {
   fetchStoreContact,
   saveBannerData,
   fetchCategoriesData,
-  fetchProductsData,
-  saveProductsData,
   createProductOnBackend,
   updateProductOnBackend,
   updateCategoryOnBackend,
@@ -91,17 +89,6 @@ export default function App() {
     return INITIAL_CATEGORIES;
   });
 
-  const [products, setProducts] = useState(() => {
-    try {
-      const local = localStorage.getItem('swissmax_products_data_v2');
-      if (local) {
-        const parsed = JSON.parse(local);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (e) {}
-    return [];
-  });
-  
   const [currency, setCurrency] = useState('NGN');
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,10 +105,6 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [storeWhatsApp, setStoreWhatsApp] = useState('');
 
-  const [isInitialLoading, setIsInitialLoading] = useState(() => {
-    return !localStorage.getItem('swissmax_products_data_v2');
-  });
-
   // Load backend/persisted data on startup
   useEffect(() => {
     // Independent of the catalog load so the chat button isn't held up by it
@@ -135,10 +118,8 @@ export default function App() {
         const catData = await fetchCategoriesData();
         if (catData && catData.length > 0) setCategories(catData);
 
-        const prodData = await fetchProductsData();
-        if (Array.isArray(prodData)) setProducts(prodData);
-      } finally {
-        setIsInitialLoading(false);
+      } catch (e) {
+        console.warn('Initial data load failed:', e);
       }
     }
     loadData();
@@ -251,53 +232,13 @@ export default function App() {
     setCategories(fresh);
   };
 
-  const handleUpdateProduct = async (productId, updates) => {
-    // Sync with backend API and use the returned product data if available
-    const backendProduct = await updateProductOnBackend(productId, updates);
-    const mergedUpdates = backendProduct
-      ? {
-          name: backendProduct.name,
-          price: backendProduct.price,
-          description: backendProduct.description,
-          category_name: backendProduct.category_name,
-          category_slug: backendProduct.category_slug,
-          tag: backendProduct.tag || '',
-          image: backendProduct.image || updates.image,
-        }
-      : updates;
+  // The dashboard owns the (paginated) product list and reloads it after each of these succeeds.
+  // They throw on failure so nothing is shown as saved when it wasn't.
+  const handleUpdateProduct = (productId, updates) => updateProductOnBackend(productId, updates);
 
-    const updated = products.map(p => p.id === productId ? { ...p, ...mergedUpdates } : p);
-    setProducts(updated);
-    await saveProductsData(updated);
-  };
+  const handleAddProduct = (newProd) => createProductOnBackend(newProd);
 
-  const handleAddProduct = async (newProd) => {
-    // Create directly on backend Supabase PostgreSQL database.
-    // Throws if the save fails — no local-only fallback, since that copy vanishes on refresh.
-    const savedProd = await createProductOnBackend(newProd);
-    const productToAdd = {
-      id: savedProd.id,
-      name: savedProd.name,
-      slug: savedProd.slug,
-      price: savedProd.price,
-      description: savedProd.description,
-      category_name: savedProd.category_name,
-      category_slug: savedProd.category_slug,
-      image: savedProd.image || newProd.image,
-      tag: savedProd.tag || ''
-    };
-
-    const updated = [productToAdd, ...products];
-    setProducts(updated);
-    await saveProductsData(updated);
-  };
-
-  const handleDeleteProduct = async (productId) => {
-    const updated = products.filter(p => p.id !== productId);
-    setProducts(updated);
-    await deleteProductOnBackend(productId);
-    await saveProductsData(updated);
-  };
+  const handleDeleteProduct = (productId) => deleteProductOnBackend(productId);
 
   const totalCartCount = cart.reduce((total, item) => total + item.quantity, 0);
 
@@ -334,7 +275,6 @@ export default function App() {
           onUpdateBanner={handleUpdateBanner}
           categories={categories}
           onUpdateCategory={handleUpdateCategory}
-          products={products}
           onUpdateProduct={handleUpdateProduct}
           onAddProduct={handleAddProduct}
           onDeleteProduct={handleDeleteProduct}
@@ -362,7 +302,6 @@ export default function App() {
 
           {/* 5. Luxury Product Catalog Grid */}
           <ProductGrid
-            products={products}
             categories={categories}
             activeCategory={activeCategory}
             onSelectCategory={setActiveCategory}
@@ -370,7 +309,6 @@ export default function App() {
             onAddToCart={handleAddToCart}
             onQuickView={setSelectedProduct}
             searchQuery={searchQuery}
-            isLoading={isInitialLoading}
           />
 
           {/* 6. Swiss Alpine Cellular Heritage (Rich Visual Section) */}

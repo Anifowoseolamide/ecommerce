@@ -9,7 +9,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.models import Count, Q
 from products.models import Product, Category, ProductImage, PRODUCT_TAG_CHOICES
 from home.models import HeroBanner
 from orders.models import CheckoutSettings, Order, OrderItem, generate_order_reference, normalize_whatsapp_number
@@ -342,10 +344,46 @@ def update_category(request, category_id):
     })
 
 
+DEFAULT_PAGE_SIZE = 12
+MAX_PAGE_SIZE = 60
+
+# Stable orderings (uid breaks ties) so a product never repeats or vanishes between pages
+PRODUCT_SORTS = {
+    'featured': ('-create_at', 'uid'),
+    'price-low': ('price', '-create_at', 'uid'),
+    'price-high': ('-price', '-create_at', 'uid'),
+}
+
+
+def positive_int(raw, default, maximum=None):
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return default
+    if value < 1:
+        return default
+    return min(value, maximum) if maximum else value
+
+
+def pagination_info(paginator, page):
+    return {
+        'page': page.number,
+        'page_size': paginator.per_page,
+        'total': paginator.count,
+        'total_pages': paginator.num_pages,
+    }
+
+
 def get_products(request):
-    """Retrieve products, optionally filtered by category or search term."""
+    """Products, optionally filtered by category/search and sorted.
+
+    With ?page=N the response is one page (page_size defaults to 12, max 60) plus pagination info
+    and catalog-wide counts per category. Without ?page the full list is returned, as before.
+    """
     category_slug = request.GET.get('category', '').strip()
     search_query = request.GET.get('q', '').strip()
+    sort = request.GET.get('sort', 'featured')
+    paged = 'page' in request.GET
 
     products = Product.objects.all().select_related('category').prefetch_related('product_images')
 
@@ -354,10 +392,24 @@ def get_products(request):
 
     if search_query:
         products = products.filter(
-            product_name__icontains=search_query
-        ) | products.filter(
-            product_description__icontains=search_query
+            Q(product_name__icontains=search_query)
+            | Q(product_description__icontains=search_query)
+            | Q(category__category_name__icontains=search_query)
         )
+
+    products = products.order_by(*PRODUCT_SORTS.get(sort, PRODUCT_SORTS['featured']))
+
+    extra = {}
+    if paged:
+        paginator = Paginator(products, positive_int(request.GET.get('page_size'), DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE))
+        # Out-of-range pages (e.g. after a delete) fall back to the nearest valid page
+        page = paginator.get_page(positive_int(request.GET.get('page'), 1))
+        products = page.object_list
+        counts = {row['category__slug']: row['n'] for row in Product.objects.values('category__slug').annotate(n=Count('uid'))}
+        extra = {
+            'pagination': pagination_info(paginator, page),
+            'counts': {'all': sum(counts.values()), **counts},
+        }
 
     data = []
     for p in products:
@@ -377,7 +429,7 @@ def get_products(request):
             'images': images,
         })
 
-    return JsonResponse({'status': 'success', 'products': data})
+    return JsonResponse({'status': 'success', 'products': data, **extra})
 
 
 @csrf_exempt
@@ -736,9 +788,27 @@ def create_order(request):
 
 @staff_required
 def list_orders(request):
-    """Most recent orders for the dashboard."""
-    orders = Order.objects.prefetch_related('items')[:200]
-    return JsonResponse({'status': 'success', 'orders': [order_to_dict(o) for o in orders]})
+    """One page of orders, newest first, plus counts per status.
+
+    ?page=N&page_size=N (default 20, max 60) and optional ?status=new|paid|delivered|cancelled.
+    """
+    status = request.GET.get('status', '').strip()
+    orders = Order.objects.prefetch_related('items').order_by('-create_at', 'uid')
+    if status in dict(Order.STATUS_CHOICES):
+        orders = orders.filter(status=status)
+
+    paginator = Paginator(orders, positive_int(request.GET.get('page_size'), 20, MAX_PAGE_SIZE))
+    page = paginator.get_page(positive_int(request.GET.get('page'), 1))
+
+    counts = {row['status']: row['n'] for row in Order.objects.values('status').annotate(n=Count('uid'))}
+    counts = {'all': sum(counts.values()), **{key: counts.get(key, 0) for key, _ in Order.STATUS_CHOICES}}
+
+    return JsonResponse({
+        'status': 'success',
+        'orders': [order_to_dict(o) for o in page.object_list],
+        'pagination': pagination_info(paginator, page),
+        'counts': counts,
+    })
 
 
 @csrf_exempt

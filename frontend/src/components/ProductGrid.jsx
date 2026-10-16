@@ -1,40 +1,37 @@
 import React, { useState } from 'react';
 import ProductCard from './ProductCard';
+import Pagination from './Pagination';
+import usePagedList, { useDebounced } from '../hooks/usePagedList';
+import { fetchProductsPage } from '../services/api';
+
+const PAGE_SIZE = 12;
 
 export default function ProductGrid({
-  products,
   categories,
   activeCategory,
   onSelectCategory,
   currency,
   onAddToCart,
   onQuickView,
-  searchQuery,
-  isLoading
+  searchQuery
 }) {
   const [sortBy, setSortBy] = useState('featured');
+  const search = useDebounced((searchQuery || '').trim(), 300);
 
-  // Filter by category
-  let filtered = activeCategory === 'all'
-    ? products
-    : products.filter(p => p.category_slug === activeCategory);
+  // The server filters, searches, sorts and returns one page at a time
+  const { items, pagination, counts, isLoading, error, setPage, reload } = usePagedList(
+    fetchProductsPage,
+    { category: activeCategory === 'all' ? '' : activeCategory, q: search, sort: sortBy },
+    PAGE_SIZE
+  );
 
-  // Filter by search query if any
-  if (searchQuery && searchQuery.trim() !== '') {
-    const q = searchQuery.toLowerCase();
-    filtered = filtered.filter(p => 
-      p.name.toLowerCase().includes(q) || 
-      p.description.toLowerCase().includes(q) ||
-      p.category_name.toLowerCase().includes(q)
-    );
-  }
+  const handlePageChange = (next) => {
+    setPage(next);
+    const el = document.getElementById('catalog');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
 
-  // Sort
-  if (sortBy === 'price-low') {
-    filtered = [...filtered].sort((a, b) => a.price - b.price);
-  } else if (sortBy === 'price-high') {
-    filtered = [...filtered].sort((a, b) => b.price - a.price);
-  }
+  const countLabel = (value) => (value === undefined || value === null ? '…' : value);
 
   return (
     <section className="catalog-section" id="catalog">
@@ -51,20 +48,17 @@ export default function ProductGrid({
               className={`filter-tab ${activeCategory === 'all' ? 'active' : ''}`}
               onClick={() => onSelectCategory('all')}
             >
-              ALL ITEMS ({products.length})
+              ALL ITEMS ({countLabel(counts?.all)})
             </button>
-            {categories.map((cat) => {
-              const count = products.filter(p => p.category_slug === cat.slug).length;
-              return (
-                <button
-                  key={cat.slug}
-                  className={`filter-tab ${activeCategory === cat.slug ? 'active' : ''}`}
-                  onClick={() => onSelectCategory(cat.slug)}
-                >
-                  {cat.name.toUpperCase()} ({count})
-                </button>
-              );
-            })}
+            {categories.map((cat) => (
+              <button
+                key={cat.slug}
+                className={`filter-tab ${activeCategory === cat.slug ? 'active' : ''}`}
+                onClick={() => onSelectCategory(cat.slug)}
+              >
+                {cat.name.toUpperCase()} ({countLabel(counts ? (counts[cat.slug] || 0) : undefined)})
+              </button>
+            ))}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -83,9 +77,9 @@ export default function ProductGrid({
         </div>
 
         {/* Product Cards Grid */}
-        {filtered.length > 0 ? (
-          <div className="product-grid">
-            {filtered.map((prod) => (
+        {items.length > 0 ? (
+          <div className="product-grid" style={{ opacity: isLoading ? 0.5 : 1, transition: 'opacity 0.15s' }}>
+            {items.map((prod) => (
               <ProductCard
                 key={prod.id || prod.slug}
                 product={prod}
@@ -106,6 +100,16 @@ export default function ProductGrid({
               </div>
             ))}
           </div>
+        ) : error ? (
+          <div style={{ textAlign: 'center', padding: '60px 20px', background: '#FAFAFA', border: '1px solid var(--border-light)' }}>
+            <p style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', color: '#666', marginBottom: '8px' }}>
+              We couldn't load the products.
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{error}</p>
+            <button className="btn-discover" onClick={reload} style={{ color: '#000', borderColor: '#000', marginTop: '14px' }}>
+              TRY AGAIN
+            </button>
+          </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '60px 20px', background: '#FAFAFA', border: '1px solid var(--border-light)' }}>
             <p style={{ fontFamily: 'var(--font-serif)', fontSize: '20px', color: '#666', marginBottom: '8px' }}>
@@ -120,6 +124,8 @@ export default function ProductGrid({
             </button>
           </div>
         )}
+
+        <Pagination pagination={pagination} onPageChange={handlePageChange} disabled={isLoading} noun="products" />
       </div>
     </section>
   );

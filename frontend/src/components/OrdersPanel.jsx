@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { RefreshCw, Phone, MessageCircle } from 'lucide-react';
+import Pagination from './Pagination';
+import usePagedList from '../hooks/usePagedList';
 import { formatCurrency } from '../data/initialData';
-import { fetchOrders, updateOrderStatus } from '../services/api';
+import { fetchOrdersPage, updateOrderStatus } from '../services/api';
 import { whatsAppLink } from '../utils/whatsapp';
 
 const STATUS_OPTIONS = [
@@ -14,44 +16,32 @@ const STATUS_OPTIONS = [
 const headingStyle = { fontFamily: 'var(--font-display)', fontSize: '18px', letterSpacing: '0.06em' };
 const smallLabelStyle = { fontSize: '10px', fontWeight: '700', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-muted)' };
 
-// onOrdersChange lets the sidebar keep its new-orders badge in sync
-export default function OrdersPanel({ onOrdersChange }) {
-  const [orders, setOrders] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
+const ORDERS_PAGE_SIZE = 15;
+
+// onCountsChange lets the sidebar keep its new-orders badge in sync
+export default function OrdersPanel({ onCountsChange }) {
   const [statusFilter, setStatusFilter] = useState('all');
-
-  const loadAll = async () => {
-    setIsLoading(true);
-    setLoadError('');
-    try {
-      setOrders(await fetchOrders());
-    } catch (err) {
-      setLoadError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { items: visibleOrders, pagination, counts, isLoading, error: loadError, setPage, reload } = usePagedList(
+    fetchOrdersPage,
+    { status: statusFilter === 'all' ? '' : statusFilter },
+    ORDERS_PAGE_SIZE
+  );
+  const loadAll = reload;
 
   useEffect(() => {
-    loadAll();
-  }, []);
-
-  useEffect(() => {
-    if (onOrdersChange) onOrdersChange(orders);
-  }, [orders]);
+    if (counts && onCountsChange) onCountsChange(counts);
+  }, [counts]);
 
   const handleStatusChange = async (orderId, status) => {
     try {
-      const updated = await updateOrderStatus(orderId, status);
-      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      await updateOrderStatus(orderId, status);
+      reload(); // refresh the page and the per-status counts from the server
     } catch (err) {
       alert(`Status was NOT updated: ${err.message}`);
     }
   };
 
-  const visibleOrders = statusFilter === 'all' ? orders : orders.filter((o) => o.status === statusFilter);
-  const newCount = orders.filter((o) => o.status === 'new').length;
+  const newCount = counts?.new ?? 0;
 
   return (
     <div className="dashboard-panel">
@@ -65,9 +55,9 @@ export default function OrdersPanel({ onOrdersChange }) {
         </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <select className="form-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ width: 'auto' }}>
-            <option value="all">All orders ({orders.length})</option>
+            <option value="all">All orders ({counts?.all ?? '…'})</option>
             {STATUS_OPTIONS.map((s) => (
-              <option key={s.value} value={s.value}>{s.label} ({orders.filter((o) => o.status === s.value).length})</option>
+              <option key={s.value} value={s.value}>{s.label} ({counts?.[s.value] ?? '…'})</option>
             ))}
           </select>
           <button type="button" onClick={loadAll} disabled={isLoading} title="Refresh orders"
@@ -152,6 +142,8 @@ export default function OrdersPanel({ onOrdersChange }) {
           );
         })}
       </div>
+
+      <Pagination pagination={pagination} onPageChange={setPage} disabled={isLoading} noun="orders" />
     </div>
   );
 }

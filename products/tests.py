@@ -204,3 +204,79 @@ class CategoryUpdateApiTests(TestCase):
 
     def test_requires_admin_token(self):
         self.assertEqual(self.client.post(self.url, {"description": "x"}).status_code, 401)
+
+
+class ProductPaginationTests(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        skincare, perfume = Category.objects.get(slug="skincare"), Category.objects.get(slug="perfume")
+        for i in range(25):
+            Product.objects.create(
+                product_name=f"Item {i:02d}", category=perfume if i % 5 == 0 else skincare,
+                price=1000 + i, product_description="Rose petal glow" if i == 7 else "plain",
+            )
+
+    def page(self, **params):
+        return self.client.get("/api/products/", {"page": 1, **params}).json()
+
+    def test_pages_partition_the_catalog_without_repeats(self):
+        seen = []
+        for number in (1, 2, 3):
+            data = self.page(page=number, page_size=10)
+            self.assertEqual(data["pagination"], {"page": number, "page_size": 10, "total": 25, "total_pages": 3})
+            seen += [p["id"] for p in data["products"]]
+        self.assertEqual(len(seen), 25)
+        self.assertEqual(len(set(seen)), 25)
+
+    def test_default_page_size_is_12_and_capped_at_60(self):
+        self.assertEqual(len(self.page()["products"]), 12)
+        self.assertEqual(self.page(page_size=500)["pagination"]["page_size"], 60)
+        self.assertEqual(self.page(page_size="abc")["pagination"]["page_size"], 12)
+
+    def test_out_of_range_page_returns_last_page(self):
+        data = self.page(page=99, page_size=10)
+        self.assertEqual(data["pagination"]["page"], 3)
+        self.assertEqual(len(data["products"]), 5)
+
+    def test_counts_cover_the_whole_catalog_not_the_page_or_filter(self):
+        data = self.page(category="perfume", page_size=2)
+        self.assertEqual(data["counts"], {"all": 25, "perfume": 5, "skincare": 20})
+        self.assertEqual(data["pagination"]["total"], 5)
+
+    def test_category_search_and_sort(self):
+        self.assertEqual([p["name"] for p in self.page(q="rose")["products"]], ["Item 07"])
+        self.assertEqual(self.page(q="PERFUME")["pagination"]["total"], 5, "search also matches the category name")
+        prices = [p["price"] for p in self.page(sort="price-high", page_size=60)["products"]]
+        self.assertEqual(prices, sorted(prices, reverse=True))
+        prices = [p["price"] for p in self.page(sort="price-low", page_size=60)["products"]]
+        self.assertEqual(prices, sorted(prices))
+
+    def test_without_page_param_full_list_is_returned_as_before(self):
+        data = self.client.get("/api/products/").json()
+        self.assertEqual(len(data["products"]), 25)
+        self.assertNotIn("pagination", data)
+
+
+class OrderPaginationTests(TestCase):
+    def setUp(self):
+        from orders.models import Order
+        self.admin = User.objects.create_user("admin", password="pw-123456", is_staff=True)
+        for i in range(25):
+            Order.objects.create(customer_name=f"C{i}", customer_phone="0803", delivery_address="x", total=100,
+                                 status="new" if i < 20 else "paid")
+
+    def get(self, **params):
+        return self.client.get("/api/orders/", params, **auth_header(self.admin)).json()
+
+    def test_orders_are_paged_with_status_counts(self):
+        data = self.get()
+        self.assertEqual(len(data["orders"]), 20)
+        self.assertEqual(data["pagination"]["total_pages"], 2)
+        self.assertEqual(data["counts"], {"all": 25, "new": 20, "paid": 5, "delivered": 0, "cancelled": 0})
+        self.assertEqual(len(self.get(page=2)["orders"]), 5)
+
+    def test_status_filter_and_counts_ignore_the_filter(self):
+        data = self.get(status="paid")
+        self.assertEqual(data["pagination"]["total"], 5)
+        self.assertEqual(data["counts"]["all"], 25)
+        self.assertEqual(self.get(status="bogus")["pagination"]["total"], 25)

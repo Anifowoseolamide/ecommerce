@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Save, CheckCircle2, RefreshCw, Plus, Trash2, Edit2, Sparkles, X, Check, Loader2, ClipboardList, Images, Tags, Package, Landmark, Store, LogOut } from 'lucide-react';
-import { uploadMediaFile, fetchOrders } from '../services/api';
+import { uploadMediaFile, fetchOrdersPage, fetchProductsPage } from '../services/api';
+import Pagination from './Pagination';
+import usePagedList, { useDebounced } from '../hooks/usePagedList';
 import OrdersPanel from './OrdersPanel';
 import PaymentSettingsPanel from './PaymentSettingsPanel';
 import { INITIAL_SLIDES, CURRENCY_RATES, formatCurrency, PRODUCT_TAGS, tagClassName } from '../data/initialData';
@@ -32,7 +34,6 @@ export default function Dashboard({
   onUpdateBanner,
   categories,
   onUpdateCategory,
-  products,
   onUpdateProduct,
   onAddProduct,
   activeTab: routeTab,
@@ -50,10 +51,16 @@ export default function Dashboard({
 
   // Sidebar badge; load errors are shown on the Orders page itself
   useEffect(() => {
-    fetchOrders()
-      .then((list) => setNewOrderCount(list.filter((o) => o.status === 'new').length))
+    fetchOrdersPage({ page: 1, pageSize: 1 })
+      .then(({ counts }) => setNewOrderCount(counts.new))
       .catch(() => {});
   }, []);
+
+  // Products tab: one page at a time, searchable
+  const [productSearch, setProductSearch] = useState('');
+  const debouncedProductSearch = useDebounced(productSearch.trim(), 300);
+  const productList = usePagedList(fetchProductsPage, { q: debouncedProductSearch }, 10);
+  const pageProducts = productList.items;
   
   // Slides State (Rotating cosmetic & beauty banners)
   const [slides, setSlides] = useState(
@@ -246,7 +253,13 @@ export default function Dashboard({
       setUploadingImageId(prodId);
       const uploadedUrl = await uploadMediaFile(file);
       setUploadingImageId(null);
-      await onUpdateProduct(prodId, { image: uploadedUrl });
+      try {
+        await onUpdateProduct(prodId, { image: uploadedUrl });
+      } catch (err) {
+        alert(`Image was NOT saved: ${err.message}`);
+        return;
+      }
+      productList.reload();
       // Trigger flash animation
       setChangedImageId(prodId);
       setTimeout(() => setChangedImageId(null), 700);
@@ -274,6 +287,9 @@ export default function Dashboard({
       setIsCreatingProduct(false);
     }
     setShowAddProductModal(false);
+    // The newest product is listed first, so show it
+    productList.setPage(1);
+    productList.reload();
     setNewProduct({
       name: '',
       price: '',
@@ -293,7 +309,7 @@ export default function Dashboard({
       items: [
         { id: 'hero', label: 'Hero slides', icon: Images, count: slides.length },
         { id: 'categories', label: 'Categories', icon: Tags, count: categories.length },
-        { id: 'products', label: 'Products', icon: Package, count: products.length },
+        { id: 'products', label: 'Products', icon: Package, count: productList.pagination?.total },
       ],
     },
     {
@@ -358,7 +374,7 @@ export default function Dashboard({
         )}
 
         {activeTab === 'orders' && (
-          <OrdersPanel onOrdersChange={(list) => setNewOrderCount(list.filter((o) => o.status === 'new').length)} />
+          <OrdersPanel onCountsChange={(counts) => setNewOrderCount(counts.new)} />
         )}
         {activeTab === 'payments' && <PaymentSettingsPanel />}
 
@@ -774,9 +790,33 @@ export default function Dashboard({
               </button>
             </div>
 
+            <div style={{ marginBottom: '18px' }}>
+              <input
+                type="search"
+                className="form-input"
+                placeholder="Search products by name, description or category…"
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                style={{ maxWidth: '420px' }}
+              />
+            </div>
+
+            {productList.error && (
+              <div style={{ background: '#FDECEA', color: '#B3261E', fontSize: '13px', padding: '12px 14px', borderRadius: '2px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                <span>Could not load products: {productList.error}</span>
+                <button type="button" onClick={productList.reload} style={{ fontWeight: '700', fontSize: '11px', letterSpacing: '0.06em', color: '#B3261E' }}>TRY AGAIN</button>
+              </div>
+            )}
+
+            {!productList.isLoading && !productList.error && pageProducts.length === 0 && (
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', padding: '30px 0', textAlign: 'center' }}>
+                {debouncedProductSearch ? 'No products match your search.' : 'No products yet. Use "Add new product" to create the first one.'}
+              </p>
+            )}
+
             {/* Product Items — Inline Editable Rows */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-              {products.map((prod) => {
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', opacity: productList.isLoading && pageProducts.length > 0 ? 0.55 : 1, transition: 'opacity 0.15s' }}>
+              {pageProducts.map((prod) => {
                 const isEditing = editingProductId === prod.id;
                 const isUploading = uploadingImageId === prod.id;
                 const imgFlash = changedImageId === prod.id;
@@ -1004,7 +1044,13 @@ export default function Dashboard({
                               const { price_currency, ...fields } = editForm;
                               // A blank price leaves the stored price unchanged instead of saving ₦0
                               const price = fields.price === '' ? undefined : toNgn(fields.price, price_currency);
-                              await onUpdateProduct(prod.id, { ...fields, price });
+                              try {
+                                await onUpdateProduct(prod.id, { ...fields, price });
+                              } catch (err) {
+                                alert(`Product was NOT saved: ${err.message}`);
+                                return;
+                              }
+                              productList.reload();
                               setSavingNotice(`✓ "${editForm.name}" updated.`);
                               setTimeout(() => setSavingNotice(''), 3000);
                               setEditingProductId(null);
@@ -1022,12 +1068,14 @@ export default function Dashboard({
                 );
               })}
             </div>
+
+            <Pagination pagination={productList.pagination} onPageChange={productList.setPage} disabled={productList.isLoading} noun="products" />
           </div>
         )}
 
         {/* MODAL: CONFIRM DELETE PRODUCT */}
         {confirmDeleteId && (() => {
-          const prod = products.find(p => p.id === confirmDeleteId);
+          const prod = pageProducts.find(p => p.id === confirmDeleteId);
           return (
             <div className="modal-backdrop" onClick={() => setConfirmDeleteId(null)}>
               <div
@@ -1051,7 +1099,13 @@ export default function Dashboard({
                   <button
                     onClick={async () => {
                       setConfirmDeleteId(null);
-                      await onDeleteProduct(confirmDeleteId);
+                      try {
+                        await onDeleteProduct(confirmDeleteId);
+                      } catch (err) {
+                        alert(`Product was NOT deleted: ${err.message}`);
+                        return;
+                      }
+                      productList.reload();
                       setSavingNotice(`✓ Product "${prod?.name}" deleted from catalog.`);
                       setTimeout(() => setSavingNotice(''), 3500);
                     }}
